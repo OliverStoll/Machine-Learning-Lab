@@ -4,6 +4,10 @@ Du importierst das Projekt bei Pycharm mit VSC/GIT -> clone (url: https://github
 
 Dafür musst du dich in Pycharm eventuell in Git einloggen, schaffste.
 
+Danach musst du nurnoch einen Interpreter erstellen mit File -> Settings -> Project: MLL-1 -> Python Interpreter -> Zahnrad -> Add... -> New environment
+
+Und die ganzen packages installieren mit dem Terminal: `pip install -r requirements.txt`
+
 # Aufbau
 
 Der Code ist in `/stubs`, die Tests sind in `/tests`.
