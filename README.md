@@ -1,12 +1,12 @@
-# MLL-1
+# Import
 
-Du importierst das Projekt bei Pycharm mit VSC/GIT -> clone (url: https://github.com/OliverStoll/MLL-1/ , ordner wo du es haben willst)
+Du importierst das Projekt bei Pycharm mit VSC/GIT -> clone (url: https://github.com/OliverStoll/MLL-1/ , ordner: wo du es drin haben willst (solltest neuen erstellen))
 
 Dafür musst du dich in Pycharm eventuell in Git einloggen, schaffste.
 
 # Aufbau
 
-Der Code ist in `/stubs`, die Tests sind in tests.
+Der Code ist in `/stubs`, die Tests sind in `/tests`.
 
 Wenn du den Code testen willst kannst du die Tests einfach ganz normal ausführen und bekommst ein Interface was dir sagt welche Tests fehlschlagen.
 
