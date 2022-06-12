@@ -33,7 +33,7 @@ def mean_absolute_error(y_true, y_pred):
     assert len(y_true) == len(y_pred)
     errors = []
     for index in range(len(y_true)):
-        abs_error = np.abs(y_true-y_pred)
+        abs_error = np.abs(y_true - y_pred)
         errors.append(abs_error)
     return np.mean(errors)
 
@@ -60,8 +60,6 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
         for i, name in enumerate(params.keys()):
             param_name = name
             param_combination[param_name] = param_combi_unnamed[i]
-
-
 
         for repetion in range(nrepetitions):
             # divide x in 10 random partitions of the same size
@@ -97,10 +95,11 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
 
     return model
 
-  
+
 class krr():
     ''' your header here!
     '''
+
     def __init__(self, kernel='linear', kernelparameter=1, regularization=0):
         self.kernel = kernel
         self.kernelparameter = kernelparameter
@@ -125,8 +124,7 @@ class krr():
 
 
 if __name__ == "__main__":
-
     X = list(range(20))
-    y = [0]*20
-    params = {'a': [0,1,2], 'b': [3,4]}
+    y = [0] * 20
+    params = {'a': [0, 1, 2], 'b': [3, 4]}
     cv(X=X, y=y, method=None, params=params)
