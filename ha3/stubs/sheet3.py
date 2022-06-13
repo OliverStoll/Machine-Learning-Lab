@@ -23,8 +23,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def zero_one_loss(y_true, y_pred):
-    ''' your header here!
-    '''
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+        return np.average(y_true == np.sign(y_pred))
 
 
 def mean_absolute_error(y_true, y_pred):
@@ -95,32 +95,81 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
 
     return model
 
-
-class krr():
-    ''' your header here!
-    '''
-
-    def __init__(self, kernel='linear', kernelparameter=1, regularization=0):
+class krr:
+    def __init__(self, kernel, kernelparameter, regularization):
         self.kernel = kernel
         self.kernelparameter = kernelparameter
         self.regularization = regularization
+    def fit(self, Xtrain, ytrain):
+        n,d = Xtrain.shape
+        K = kernelmatrix(X = Xtrain, kernelparameter = self.kernelparameter)
+        self.K = K
+        if self.regularization == 0:
+            self.regularization = one_out_crossval(data = Xtrain, labels = ytrain, K = self.K)
+        inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
+        alpha = inverse @ ytrain
+        self.w = Xtrain.T @ alpha
 
-    def fit(self, X, y, kernel=False, kernelparameter=False, regularization=False):
-        ''' your header here!
-        '''
-        if kernel is not False:
-            self.kernel = kernel
-        if kernelparameter is not False:
-            self.kernelparameter = kernelparameter
-        if regularization is not False:
-            self.regularization = regularization
 
-        return self
+    def predict(self, Xtest):
+        return(Xtest @ self.w)
 
-    def predict(self, X):
-        ''' your header here!
-        '''
-        return self
+def kernelmatrix(X, kernel, kernelparameter):
+    n,d = X.shape
+    K = np.zeros((n,n))
+    for i,x in enumerate(X):
+        for j,y in enumerate(X):
+            K[i][j] = kernelcalc(x = x,y = y,kernel = kernel,kernelparameter = kernelparameter)
+    return(K)
+
+
+def kernelcalc(x,y,kernel, kernelparameter):
+    if kernel == 'linear':
+        return(np.dot(x,y))
+    elif kernel == 'polynomial':
+        return((np.dot(x,y) + 1 ) ** kernelparameter)
+    elif kernel == 'gaussian':
+        a = (scipy.linalg.norm(x-y, ord = 2)**2 )/(2* (kernelparameter**2))
+        return(np.exp(-a))
+    else:
+        raise Exception('kernel not implemented')
+
+def one_out_crossval(data, labels, K):
+    eigvals = scipy.linalg.eigvals(data.T @ data)
+    mean = np.mean(eigvals)
+    candidates1 = mean + np.exp(np.linspace(-10, 10, 21))
+    candidates2 = mean - np.exp(np.linspace(-10, 10, 21))
+    candidates = np.concatenate([candidates1, np.zeros(1), candidates2[::-1]])
+    errors = np.zeros(len(candidates))
+    L,U = eig_decomp(K)
+    for index, candidate in enumerate(candidates):
+        error = one_out_err(labels = labels, C=candidate, L = L, U = U)
+        errors[index] = error
+    optindex = np.argmin(errors)
+    return candidates[optindex]
+def one_out_err(labels, C, L, U):
+    diag = 1/(L + C)
+    diagmat = np.diag(diag)
+    S = U @ L @ diagmat @ U.T
+    Sy = S @ labels
+    fraction = (labels - Sy)/(1-diag)
+    return(np.average(fraction))
+
+'''compute eigen decomposition of symmetric matrix A, i.e. A = U @ L @ U.T'''
+def eig_decomp(A):
+    eigvals,eigvecs = scipy.linalg.eigh(A)
+    L, U = np.diag(eigvals), eigvecs
+    return(L,U)
+
+def load_data():
+    data = {}
+    for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
+        data[testset] = {}
+        for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
+            pathsuffix = testset + '-' + type + '.dat'
+            path = 'C:/Users/funto/PycharmProjects/MLLAB/data/U04_' + pathsuffix
+            data[testset][type] = np.loadtxt(path)
+    return(data)
 
 
 if __name__ == "__main__":
