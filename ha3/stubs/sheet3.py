@@ -20,11 +20,12 @@ import time
 import pylab as pl
 from sklearn.model_selection import KFold, RepeatedKFold
 from mpl_toolkits.mplot3d import Axes3D
+import scipy
 
 
 def zero_one_loss(y_true, y_pred):
     ''' Loss function that calculates percentage of correctly predicted signs'''
-        return np.average(y_true == np.sign(y_pred))
+    return np.average(y_true == np.sign(y_pred))
 
 
 def mean_absolute_error(y_true, y_pred):
@@ -96,19 +97,19 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
     return model
 
 class krr:
-    def __init__(self, kernel, kernelparameter, regularization):
+    def __init__(self, kernel = 'linear', kernelparameter = 1, regularization = 0):
         self.kernel = kernel
         self.kernelparameter = kernelparameter
         self.regularization = regularization
-    def fit(self, Xtrain, ytrain):
-        n,d = Xtrain.shape
-        K = kernelmatrix(X = Xtrain, kernelparameter = self.kernelparameter)
+    def fit(self, X, y):
+        n,d = X.shape
+        K = kernelmatrix(X = X, kernelparameter = self.kernelparameter, kernel = self.kernel)
         self.K = K
         if self.regularization == 0:
-            self.regularization = one_out_crossval(data = Xtrain, labels = ytrain, K = self.K)
+            self.regularization = one_out_crossval(data = X, labels = y, K = self.K)
         inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
-        alpha = inverse @ ytrain
-        self.w = Xtrain.T @ alpha
+        alpha = inverse @ y
+        self.w = X.T @ alpha
 
 
     def predict(self, Xtest):
@@ -137,16 +138,17 @@ def kernelcalc(x,y,kernel, kernelparameter):
 def one_out_crossval(data, labels, K):
     eigvals = scipy.linalg.eigvals(data.T @ data)
     mean = np.mean(eigvals)
-    candidates1 = mean + np.exp(np.linspace(-10, 10, 21))
-    candidates2 = mean - np.exp(np.linspace(-10, 10, 21))
-    candidates = np.concatenate([candidates1, np.zeros(1), candidates2[::-1]])
+    candidates1 = mean + np.exp(np.linspace(-10, 10, 20))
+    candidates2 = mean - np.exp(np.linspace(-10, 10, 20))
+    candidates = np.concatenate([candidates1, candidates2[::-1]])
     errors = np.zeros(len(candidates))
     L,U = eig_decomp(K)
     for index, candidate in enumerate(candidates):
-        error = one_out_err(labels = labels, C=candidate, L = L, U = U)
+        error = one_out_err(labels = labels, C = candidate, L = L, U = U)
         errors[index] = error
     optindex = np.argmin(errors)
     return candidates[optindex]
+
 def one_out_err(labels, C, L, U):
     diag = 1/(L + C)
     diagmat = np.diag(diag)
@@ -155,13 +157,14 @@ def one_out_err(labels, C, L, U):
     fraction = (labels - Sy)/(1-diag)
     return(np.average(fraction))
 
-'''compute eigen decomposition of symmetric matrix A, i.e. A = U @ L @ U.T'''
 def eig_decomp(A):
+    '''compute eigen decomposition of symmetric matrix A, i.e. A = U @ L @ U.T'''
     eigvals,eigvecs = scipy.linalg.eigh(A)
     L, U = np.diag(eigvals), eigvecs
     return(L,U)
 
 def load_data():
+    '''load data as dictionary of dictionaries'''
     data = {}
     for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
         data[testset] = {}
