@@ -191,7 +191,7 @@ class krr_application:
         # TODO: What are the parameters we need to test??
         self.kernel_list = ['linear', 'polynomial', 'gaussian']
         self.kernelparameter_list = [1, 2, 3]
-        self.regularization_list = [0, 0.1, 1, 10]
+        self.regularization_list = np.power(10,np.linspace(-7,0,8))
 
         # save the parameter options as dictionary
         self.parameters_dict = {'kernel': self.kernel_list,
