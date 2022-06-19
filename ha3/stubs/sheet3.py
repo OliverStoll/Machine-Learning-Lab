@@ -18,10 +18,12 @@ import scipy.linalg as la
 import itertools as it
 import pickle
 import time
+import scipy.io as sio
 import pylab as pl
 from sklearn.model_selection import KFold, RepeatedKFold
 from mpl_toolkits.mplot3d import Axes3D
 import scipy
+
 
 def zero_one_loss(y_true, y_pred):
     ''' Loss function that calculates percentage of correctly predicted signs'''
@@ -176,9 +178,11 @@ def eig_decomp(A):
     return (L, U)
 
 
+##############################################################################
+
 class krr_application:
     """ Class that is used to perform Assignment 4 """
-    def __init__(self, data_path, ):
+    def __init__(self, data_path):
         self.data_path = data_path
         self.data_dict = self._load_data()
         self.results_dict = {}
@@ -201,10 +205,10 @@ class krr_application:
             data[testset] = {}
             for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
                 full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
-                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
+                data[testset][type] = sio.loadmat(full_path)  # transpose to have the correct shape
         return (data)
 
-    def search_for_optimal_parameters(self, loss_function=mean_absolute_error):
+    def search_for_optimal_parameters(self, loss_function=zero_one_loss):
         """
         Function that actually searches for the parameters that yield the best performance
 
@@ -252,7 +256,7 @@ def roc_fun(y_true, y_pred):
 class assignment_3:
     """ Class that is used to perform Assignment 3 """
     def __init__(self, data_path="data/qm7.mat"):
-        self.data = np.loadtxt(data_path, encoding='').T
+        self.data = sio.loadmat(data_path)
         print(self.data)
         self.matrices = self._get_matrices_from_data()
         self.eigenvectors = self._get_eigenvectors_from_matrices()
@@ -263,6 +267,7 @@ class assignment_3:
 
     def _get_matrices_from_data(self):
         """ From the data file, get the matrices """
+
         pass
 
     def _get_eigenvectors_from_matrices(self):
@@ -275,8 +280,7 @@ class assignment_3:
 
         # sort the eigenvectors by the eigenvalues in descending order
         eig_vals, eig_vecs = zip(*sorted(zip(eig_vals, eig_vecs), key=lambda x: x[0], reverse=True))
-
-        return np.array(eig_vecs)
+        self.eigenvectors = np.array(eig_vecs)
 
     def plot_distances(self):
         """ Plot the distances between all pairs of eigenvectors, and their respective labels """
@@ -319,6 +323,6 @@ class assignment_3:
 
 
 if __name__ == '__main__':
+
     # krr_application(data_path='data').search_for_optimal_parameters()
     assignment_3()
-    pass
