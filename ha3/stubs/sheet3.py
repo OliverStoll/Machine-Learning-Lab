@@ -16,12 +16,12 @@ Write your implementations in the given functions stubs!
 import numpy as np
 import scipy.linalg as la
 import itertools as it
+import pickle
 import time
 import pylab as pl
 from sklearn.model_selection import KFold, RepeatedKFold
 from mpl_toolkits.mplot3d import Axes3D
 import scipy
-
 
 def zero_one_loss(y_true, y_pred):
     ''' Loss function that calculates percentage of correctly predicted signs'''
@@ -71,9 +71,9 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
                 X_test, y_test = X[test_ix], y[test_ix]
 
                 # train the model using the training data and get predictions about the test data
-                model = method()
-                model.fit(X=X_train, y=y_train, **param_combination)
-                y_pred = model.predict(X=X_test)
+                model = method(**param_combination)
+                model.fit(X=X_train, y=y_train)
+                y_pred = model.predict(X_test)
 
                 # evaluate the predictions against the labels for the test data
                 loss = loss_function(y_true=y_test, y_pred=y_pred)
@@ -88,52 +88,55 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
             optimal_loss = avg_loss
 
     # finally train model on optimal param combi
-    model = method()
+    model = method(**optimal_params_combi)
     model.cvloss = optimal_loss
     if num_param_combinations == 1:
         model.cvloss = np.mean(all_losses_for_single_param_combi)
-    model.fit(X=X, y=y, **optimal_params_combi)
+    model.fit(X=X, y=y)
 
     return model
 
+
 class krr:
-    def __init__(self, kernel = 'linear', kernelparameter = 1, regularization = 0):
+    def __init__(self, kernel='linear', kernelparameter=1, regularization=0):
         self.kernel = kernel
         self.kernelparameter = kernelparameter
         self.regularization = regularization
+
     def fit(self, X, y):
-        n,d = X.shape
-        K = kernelmatrix(X = X, kernelparameter = self.kernelparameter, kernel = self.kernel)
+        n, d = X.shape
+        K = kernelmatrix(X=X, kernelparameter=self.kernelparameter, kernel=self.kernel)
         self.K = K
         if self.regularization == 0:
-            self.regularization = one_out_crossval(data = X, labels = y, K = self.K)
+            self.regularization = one_out_crossval(data=X, labels=y, K=self.K)
         inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
         alpha = inverse @ y
         self.w = X.T @ alpha
 
-
     def predict(self, Xtest):
-        return(Xtest @ self.w)
+        return (Xtest @ self.w)
+
 
 def kernelmatrix(X, kernel, kernelparameter):
-    n,d = X.shape
-    K = np.zeros((n,n))
-    for i,x in enumerate(X):
-        for j,y in enumerate(X):
-            K[i][j] = kernelcalc(x = x,y = y,kernel = kernel,kernelparameter = kernelparameter)
-    return(K)
+    n, d = X.shape
+    K = np.zeros((n, n))
+    for i, x in enumerate(X):
+        for j, y in enumerate(X):
+            K[i][j] = kernelcalc(x=x, y=y, kernel=kernel, kernelparameter=kernelparameter)
+    return (K)
 
 
-def kernelcalc(x,y,kernel, kernelparameter):
+def kernelcalc(x, y, kernel, kernelparameter):
     if kernel == 'linear':
-        return(np.dot(x,y))
+        return (np.dot(x, y))
     elif kernel == 'polynomial':
-        return((np.dot(x,y) + 1 ) ** kernelparameter)
+        return ((np.dot(x, y) + 1) ** kernelparameter)
     elif kernel == 'gaussian':
-        a = (scipy.linalg.norm(x-y, ord = 2)**2 )/(2* (kernelparameter**2))
-        return(np.exp(-a))
+        a = (scipy.linalg.norm(x - y, ord=2) ** 2) / (2 * (kernelparameter ** 2))
+        return (np.exp(-a))
     else:
         raise Exception('kernel not implemented')
+
 
 def one_out_crossval(data, labels, K):
     eigvals = scipy.linalg.eigvals(data.T @ data)
@@ -142,41 +145,82 @@ def one_out_crossval(data, labels, K):
     candidates2 = mean - np.exp(np.linspace(-10, 10, 20))
     candidates = np.concatenate([candidates1, candidates2[::-1]])
     errors = np.zeros(len(candidates))
-    L,U = eig_decomp(K)
+    L, U = eig_decomp(K)
     for index, candidate in enumerate(candidates):
-        error = one_out_err(labels = labels, C = candidate, L = L, U = U)
+        error = one_out_err(labels=labels, C=candidate, L=L, U=U)
         errors[index] = error
     optindex = np.argmin(errors)
     return candidates[optindex]
 
+
 def one_out_err(labels, C, L, U):
-    diag = 1/(L + C)
+    diag = 1 / (L + C)
     diagmat = np.diag(diag)
     S = U @ L @ diagmat @ U.T
     Sy = S @ labels
-    fraction = (labels - Sy)/(1-diag)
-    return(np.average(fraction))
+    fraction = (labels - Sy) / (1 - diag)
+    return (np.average(fraction))
+
 
 def eig_decomp(A):
     '''compute eigen decomposition of symmetric matrix A, i.e. A = U @ L @ U.T'''
-    eigvals,eigvecs = scipy.linalg.eigh(A)
+    eigvals, eigvecs = scipy.linalg.eigh(A)
     L, U = np.diag(eigvals), eigvecs
-    return(L,U)
-
-def load_data():
-    '''load data as dictionary of dictionaries'''
-    data = {}
-    for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
-        data[testset] = {}
-        for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
-            pathsuffix = testset + '-' + type + '.dat'
-            path = 'C:/Users/funto/PycharmProjects/MLLAB/data/U04_' + pathsuffix
-            data[testset][type] = np.loadtxt(path)
-    return(data)
+    return (L, U)
 
 
-if __name__ == "__main__":
-    X = list(range(20))
-    y = [0] * 20
-    params = {'a': [0, 1, 2], 'b': [3, 4]}
-    cv(X=X, y=y, method=None, params=params)
+class krr_application:
+    def __init__(self, data_path, ):
+        self.data_path = data_path
+        self.data_dict = self._load_data()
+        self.results_dict = {}
+        self.kernel_list = ['linear', 'polynomial', 'gaussian']
+        self.kernelparameter_list = [1, 2, 3]
+        self.regularization_list = [0, 0.1, 1, 10]
+        self.parameters_dict = {'kernel': self.kernel_list,
+                                'kernelparameter': self.kernelparameter_list,
+                                'regularization': self.regularization_list}
+
+    def _load_data(self):
+        '''load data as dictionary of dictionaries'''
+        data = {}
+        for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
+            data[testset] = {}
+            for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
+                full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
+                data[testset][type] = np.loadtxt(full_path)
+        return (data)
+
+    def search_for_optimal_parameters(self):
+        """ search for optimal parameters for all kernels and regularization values """
+        for test_set in self.data_dict:
+            self.results_dict[test_set] = {}
+            x_train, y_train = self.data_dict[test_set]['xtrain'], self.data_dict[test_set]['ytrain']
+            optimal_model = cv(X=x_train, y=y_train, method=krr, params=self.parameters_dict, nfolds=3)
+            self.results_dict[test_set]['cvloss'] = optimal_model.cvloss
+            self.results_dict[test_set]['kernel'] = optimal_model.kernel
+            self.results_dict[test_set]['kernelparameter'] = optimal_model.kernelparameter
+            self.results_dict[test_set]['regularization'] = optimal_model.regularization
+            self.results_dict[test_set]['y_pred'] = optimal_model.predict(x_test=self.data_dict[test_set]['xtest'])
+        # save results dict to file
+        with open(f'results.p', 'wb') as f:
+            pickle.dump(self.results_dict, f)
+
+
+def roc_curve(n):
+    ''' your header here!
+    '''
+
+
+def roc_fun(y_true, y_pred):
+    ''' your header here!
+    '''
+
+
+def krr_app(reg=False):
+    ''' your header here!
+    '''
+
+
+if __name__ == '__main__':
+    krr_application(data_path='data').search_for_optimal_parameters()
