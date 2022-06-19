@@ -104,7 +104,8 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
     model = method(**optimal_params_combi)
     model.cvloss = optimal_loss
     if num_param_combinations == 1:
-        model.cvloss = np.mean(all_losses_for_single_param_combi)
+        all_losses_for_single_param_combi = np.array(all_losses_for_single_param_combi)
+        model.cvloss = np.mean(all_losses_for_single_param_combi, axis = 0)
     model.fit(X=X, y=y)
 
     return model
@@ -117,6 +118,7 @@ class krr:
         self.regularization = regularization
 
     def fit(self, X, y):
+        '''compute optimal KRR parameters alpha and bias from training set'''
         n, d = X.shape
         '''center data'''
         self.mean = np.mean(X, axis = 0)
@@ -135,6 +137,7 @@ class krr:
         self.bias = np.dot(self.alpha, biasarray)
 
     def predict(self, Xtest,bias = np.infty):
+        '''predict regression target on test set for given bias; if bias is not given, take bias calculated from training set'''
         m,d = Xtest.shape
         n = len(self.alpha)
         kernelmat = np.zeros((m,n))
@@ -151,6 +154,7 @@ class krr:
 
 
 def kernelmatrix(X, kernel, kernelparameter):
+    '''comute kernel matrix K for given kernel and data matrix X'''
     n, d = X.shape
     K = np.zeros((n, n))
     for i, x in enumerate(X):
@@ -160,6 +164,7 @@ def kernelmatrix(X, kernel, kernelparameter):
 
 
 def kernelcalc(x, y, kernel, kernelparameter):
+    '''compute value of given kernel function k(x,y)'''
     if kernel == 'linear':
         return (np.dot(x, y))
     elif kernel == 'polynomial':
@@ -172,10 +177,11 @@ def kernelcalc(x, y, kernel, kernelparameter):
 
 
 def one_out_crossval(data, labels, K):
+    '''compute optimal regularization parameter out of candidates that are logarithmically scaled around mean of eigenvalues of kernel matrix K'''
     eigvals = scipy.linalg.eigvals(data.T @ data)
     mean = np.mean(eigvals)
-    candidates1 = mean + np.exp(np.linspace(-10, 10, 20))
-    candidates2 = mean - np.exp(np.linspace(-10, 10, 20))
+    candidates1 = mean + np.power(10,np.linspace(-7, 2, 9))
+    candidates2 = mean - np.power(10,np.linspace(-7, 2, 9))
     candidates = np.concatenate([candidates1, candidates2[::-1]])
     errors = np.zeros(len(candidates))
     L, U = eig_decomp(K)
@@ -187,6 +193,7 @@ def one_out_crossval(data, labels, K):
 
 
 def one_out_err(labels, C, L, U):
+    '''compute one_out_crossval error efficiently for given eigen-decomposition of K'''
     diag = 1 / (L + C)
     diagmat = np.diag(diag)
     S = U @ L @ diagmat @ U.T
@@ -209,13 +216,12 @@ class krr_application:
     """ Class that is used to perform Assignment 4 """
     def __init__(self, data_path):
         self.data_path = data_path
-        self.data_dict = self._load_data()
+        self.data_dict = self._load_two()
+        #self.data_dict = self._load_data()
         self.results_dict = {}
         self.num_cv_repetitions = 1  # TODO: change this to 5
-
-        # TODO: What are the parameters we need to test??
         self.kernel_list = ['linear', 'polynomial', 'gaussian']
-        self.kernelparameter_list = [51, 2, 3]
+        self.kernelparameter_list = [1,3,5,10]
         self.regularization_list = np.power(10,np.linspace(-7,0,8))
 
         # save the parameter options as dictionary
@@ -230,8 +236,17 @@ class krr_application:
             data[testset] = {}
             for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
                 full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
-                data[testset][type] = sio.loadmat(full_path)  # transpose to have the correct shape
+                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
         return (data)
+    def _load_two(self):
+        data = {}
+        for testset in ['banana', 'diabetis']:
+            data[testset] = {}
+            for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
+                full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
+                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
+        return (data)
+
 
     def search_for_optimal_parameters(self, loss_function=zero_one_loss):
         """
@@ -248,7 +263,7 @@ class krr_application:
             # perform cross validation over the general parameter options
             print("Performing cross validation for test set:", test_set)
             optimal_model = cv(X=x_train, y=y_train, method=krr, params=self.parameters_dict,
-                               loss_function=loss_function, nrepetitions=self.num_cv_repetitions)
+                               loss_function=loss_function, nrepetitions=self.num_cv_repetitions, nfolds= 2)
 
             # store the results in the results dictionary
             self.results_dict[test_set]['cvloss'] = optimal_model.cvloss
@@ -268,30 +283,53 @@ class krr_application:
         Function that takes a set of biases and calculates the TPR and FPR.
         After this, the ROC curve is plotted by calling cv with the optimal parameters from results.
 
-        This can somehow be done by using roc_fun as a loss function and calculater of tpr and fpr at the same time.
+        First optimal kernelparameter and regularization are calculated with cv, then cv with roc_fun as loss function
+        is used to compute average tpr and fpr for different biases
         """
-        self.data = self._load_data()
         self.search_for_optimal_parameters()
-        rates = []
-        for testset in self.data:
-            param_dict = {'kernel': self.results_dict[testset]['kernel'],
-                          'kernelparameter': self.results_dict[testset]['kernelparameter'],
-                          'regularization': self.results_dict[testset]['regularization']}
+        fig, axes = plt.subplots(1,5, sharex= False, sharey= False,constrained_layout = True)
+        fig.set_size_inches(17, 10)
+        fig.suptitle('ROC Curves for Variation of Biases for all given Test Sets')
+        for index,testset in enumerate(self.data_dict):
+            axes[index].set_title(testset, y = -0.1)
+        #plt.show()
+        for index,testset in enumerate(self.data_dict):
+            rates = []
+            param_dict = {'kernel': [self.results_dict[testset]['kernel']], 'kernelparameter': [self.results_dict[testset]['kernelparameter']], 'regularization': [self.results_dict[testset]['regularization']]}
+            print('param_dict =', param_dict )
+            #param_dict = {'kernel': ['gaussian'],'kernelparameter': [1], 'regularization': [1]}
             for bias in biases:
-                model = cv(X = testset['xtrain'], y = testset['ytrain'], method = krr, params = param_dict, loss_function = roc_fun, bias = bias)
+                model = cv(X = self.data_dict[testset]['xtrain'], y = self.data_dict[testset]['ytrain'], method = krr, params = param_dict, loss_function = roc_fun, bias = bias, nfolds= 2)
                 rates.append(model.cvloss)
+            rates = np.array(rates)
+            x_i = rates[:][1]
+            y_i = rates[:][0]
+            axes[index].plot(x_i,y_i)
+            #plt.show()
+        plt.show()
 
 
 
 
 def roc_fun(y_true, y_pred):
-    """ """
-    pred_positives = np.sum(y_pred == 1)
-    true_positives = np.sum(y_true == 1)
-    pred_negatives  = np.sum(y_pred == -1)
-    true_negatives = np.sum(y_true == -1)
-    tpr = true_positives/pred_positives
-    fpr = true_negatives/pred_negatives
+    """calculate tpr and fpr """
+    n = len(y_true)
+    total_positives = 0
+    true_positives = 0
+    total_negatives = 0
+    false_positives = 0
+    y_pred = np.sign(y_pred)
+    for i in range(n):
+        if y_true[i] == 1:
+            total_positives += 1
+            if y_pred[i] == 1:
+                true_positives += 1
+        elif y_true[i] == -1:
+            total_negatives += 1
+            if y_pred[i] == 1:
+                false_positives +=1
+    tpr = true_positives/total_positives
+    fpr = false_positives/total_negatives
     return(np.array([tpr,fpr]))
 
 
@@ -430,4 +468,7 @@ class assignment_3:
 if __name__ == '__main__':
 
     # krr_application(data_path='data').search_for_optimal_parameters()
-    assignment_3().apply_cv()
+    #assignment_3().apply_cv()
+    testbiases = np.linspace(0,2,20)
+    testobject = krr_application(data_path= 'data')
+    testobject.plot_roc_curve(biases = testbiases)
