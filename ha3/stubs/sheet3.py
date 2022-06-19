@@ -114,16 +114,36 @@ class krr:
 
     def fit(self, X, y):
         n, d = X.shape
+        '''center data'''
+        self.mean = np.mean(X, axis = 0)
+        X = X - self.mean
+        self.X = X
         K = kernelmatrix(X=X, kernelparameter=self.kernelparameter, kernel=self.kernel)
         self.K = K
         if self.regularization == 0:
             self.regularization = one_out_crossval(data=X, labels=y, K=self.K)
         inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
-        alpha = inverse @ y
-        self.w = X.T @ alpha
+        self.alpha = inverse @ y
+        '''calculate bias'''
+        biasarray = np.zeros(n)
+        for i in range(n):
+            biasarray[i] = kernelcalc(x = X[i], y = self.mean, kernel = self.kernel, kernelparameter = self.kernelparameter)
+        self.bias = np.dot(self.alpha, biasarray)
 
-    def predict(self, Xtest):
-        return (Xtest @ self.w)
+    def predict(self, Xtest,bias = np.infty):
+        m,d = Xtest.shape
+        n = len(self.alpha)
+        kernelmat = np.zeros((m,n))
+        for i,x_i in enumerate(Xtest):
+            for j,x_j in enumerate(self.X):
+                kernelmat[i][j] = kernelcalc(x = x_i - self.mean,y = x_j, kernel = self.kernel,kernelparameter = self.kernelparameter)
+        self.variance = kernelmat @ self.alpha
+        if bias == np.infty:
+            return(self.variance + self.bias)
+        else:
+            return(self.variance + bias)
+
+
 
 
 def kernelmatrix(X, kernel, kernelparameter):
@@ -190,7 +210,7 @@ class krr_application:
 
         # TODO: What are the parameters we need to test??
         self.kernel_list = ['linear', 'polynomial', 'gaussian']
-        self.kernelparameter_list = [1, 2, 3]
+        self.kernelparameter_list = [51, 2, 3]
         self.regularization_list = np.power(10,np.linspace(-7,0,8))
 
         # save the parameter options as dictionary
@@ -249,6 +269,16 @@ class krr_application:
 
 def roc_fun(y_true, y_pred):
     """ """
+    n = len(y_true)
+    pred_positives = np.sum(y_pred == 1)
+    true_positives = np.sum(y_true == 1)
+    pred_negatives  = np.sum(y_pred == -1)
+    true_negatives = np.sum(y_true == -1)
+    tpr = true_positives/pred_positives
+    fpr = true_negatives/pred_negatives
+    error = zero_one_loss(y_true,y_pred)
+    return(tpr,fpr,error)
+
 
 
 
