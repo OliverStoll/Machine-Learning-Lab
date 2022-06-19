@@ -47,7 +47,7 @@ def mean_absolute_error(y_true, y_pred):
     return np.mean(errors)
 
 
-def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepetitions=5):
+def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepetitions=5, bias=None):
     """ Creates a class 'method' for cross validation """
 
     X = np.array(X)
@@ -81,7 +81,10 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
                 # train the model using the training data and get predictions about the test data
                 model = method(**param_combination)
                 model.fit(X=X_train, y=y_train)
-                y_pred = model.predict(X_test)
+                if bias is None:
+                    y_pred = model.predict(X_test)
+                else:
+                    y_pred = model.predict(X_test, bias=bias)
 
                 # evaluate the predictions against the labels for the test data
                 loss = loss_function(y_true=y_test, y_pred=y_pred)
