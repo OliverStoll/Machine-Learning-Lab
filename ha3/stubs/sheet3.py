@@ -130,7 +130,7 @@ class krr:
         self.K = K
         if self.regularization == 0:
             self.regularization = one_out_crossval(data=X, labels=y, K=self.K)
-        inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
+        inverse = scipy.linalg.pinv(K + self.regularization * np.eye(n))
         self.alpha = inverse @ y
         '''calculate bias'''
         biasarray = np.zeros(n)
@@ -218,11 +218,12 @@ class krr_application:
     """ Class that is used to perform Assignment 4 """
     def __init__(self, data_path):
         self.data_path = data_path
-        self.data_dict = self._load_two()
-        #self.data_dict = self._load_data()
+        #self.data_dict = self._load_two()
+        self.data_dict = self._load_data()
         self.results_dict = {}
         self.num_cv_repetitions = 1  # TODO: change this to 5
         self.kernel_list = ['linear', 'polynomial', 'gaussian']
+        #self.kernelparameter_list = [1]
         self.kernelparameter_list = [1,3,5,10]
         self.regularization_list = np.power(10,np.linspace(-7,0,8))
 
@@ -288,13 +289,18 @@ class krr_application:
         First optimal kernelparameter and regularization are calculated with cv, then cv with roc_fun as loss function
         is used to compute average tpr and fpr for different biases
         """
+        #get optimal model parameters
         self.search_for_optimal_parameters()
+        #prepare plot
         fig, axes = plt.subplots(1,5, sharex= False, sharey= False,constrained_layout = True)
         fig.set_size_inches(17, 10)
         fig.suptitle('ROC Curves for Variation of Biases for all given Test Sets')
         for index,testset in enumerate(self.data_dict):
             axes[index].set_title(testset, y = -0.1)
+            axes[index].set_xlabel('False Positive Rate (FPR)')
+            axes[index].set_ylabel('True Positive Rate (TPR)')
         #plt.show()
+        #compute roc values for given biases and plot them
         for index,testset in enumerate(self.data_dict):
             rates = []
             param_dict = {'kernel': [self.results_dict[testset]['kernel']], 'kernelparameter': [self.results_dict[testset]['kernelparameter']], 'regularization': [self.results_dict[testset]['regularization']]}
@@ -304,8 +310,8 @@ class krr_application:
                 model = cv(X = self.data_dict[testset]['xtrain'], y = self.data_dict[testset]['ytrain'], method = krr, params = param_dict, loss_function = roc_fun, bias = bias, nfolds= 2)
                 rates.append(model.cvloss)
             rates = np.array(rates)
-            x_i = rates[:][1]
-            y_i = rates[:][0]
+            x_i = rates[:,1]
+            y_i = rates[:,0]
             axes[index].plot(x_i,y_i)
             #plt.show()
         plt.show()
@@ -522,10 +528,10 @@ if __name__ == '__main__':
 
     # krr_application(data_path='data').search_for_optimal_parameters()
     #assignment_3().apply_cv()
-    testbiases = np.linspace(0,2,20)
+    testbiases = np.linspace(0,3,10)
     testobject = krr_application(data_path= 'data')
     testobject.plot_roc_curve(biases = testbiases)
-    runner = assignment_3()
+    '''runner = assignment_3()
     runner.apply_cv()
     runner.plot_mae()
-    runner.plot_scatter()
+    runner.plot_scatter()'''
