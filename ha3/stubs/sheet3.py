@@ -28,6 +28,11 @@ def zero_one_loss(y_true, y_pred):
     return np.average(y_true == np.sign(y_pred))
 
 
+def mean_squared_error(y_true, y_pred):
+    # compute the mean squared error
+    return np.mean((y_true - y_pred) ** 2)
+
+
 def mean_absolute_error(y_true, y_pred):
     """ Loss function that return the average of the absolutes of the differences between label and prediction """
 
@@ -44,17 +49,17 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
 
     X = np.array(X)
     y = np.array(y)
-    avg_error = 0
     param_options = [param_list for param_list in params.values()]
+    num_param_combinations = len(list(it.product(*param_options)))
 
+    counter = 0
     optimal_loss = 999999999
     optimal_params_combi = None
-    num_param_combinations = len(list(it.product(*param_options)))
-    counter = 0
     all_losses_for_single_param_combi = []
 
     # iterate over all parameter combinations and find the optimal one (by cross-validation)
     for param_combi_unnamed in it.product(*param_options):
+        start_time = time.time()        # start timer
         counter += 1
         param_combi_losses = []
         param_combination = {}
@@ -63,7 +68,7 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
             param_combination[param_name] = param_combi_unnamed[i]
 
         for repetion in range(nrepetitions):
-            # divide x in 10 random partitions of the same size
+            # divide x in nfolds random partitions of the same size
             kf = KFold(n_splits=nfolds)
             for train_ix, test_ix in kf.split(X):
                 # get the values and labels for training and testing
@@ -81,7 +86,9 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
                 all_losses_for_single_param_combi.append(loss)
 
         avg_loss = np.mean(param_combi_losses)
-        print(f"{param_combination}: {avg_loss} ... completed {counter}/{num_param_combinations}")  # print log
+        time_diff = time.time() - start_time
+        eta = time_diff * (num_param_combinations - counter)
+        print(f"{param_combination}: {avg_loss:.6f} ... completed {counter}/{num_param_combinations}  ETA: {eta:.1f}s")
 
         if avg_loss < optimal_loss:
             optimal_params_combi = param_combination
@@ -170,57 +177,148 @@ def eig_decomp(A):
 
 
 class krr_application:
+    """ Class that is used to perform Assignment 4 """
     def __init__(self, data_path, ):
         self.data_path = data_path
         self.data_dict = self._load_data()
         self.results_dict = {}
+        self.num_cv_repetitions = 1  # TODO: change this to 5
+
+        # TODO: What are the parameters we need to test??
         self.kernel_list = ['linear', 'polynomial', 'gaussian']
         self.kernelparameter_list = [1, 2, 3]
         self.regularization_list = [0, 0.1, 1, 10]
+
+        # save the parameter options as dictionary
         self.parameters_dict = {'kernel': self.kernel_list,
                                 'kernelparameter': self.kernelparameter_list,
                                 'regularization': self.regularization_list}
 
     def _load_data(self):
-        '''load data as dictionary of dictionaries'''
+        """ Load the data from the data path, as a dictonary of dictionaries"""
         data = {}
         for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
             data[testset] = {}
             for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
                 full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
-                data[testset][type] = np.loadtxt(full_path)
+                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
         return (data)
 
-    def search_for_optimal_parameters(self):
-        """ search for optimal parameters for all kernels and regularization values """
+    def search_for_optimal_parameters(self, loss_function=mean_absolute_error):
+        """
+        Function that actually searches for the parameters that yield the best performance
+
+        The loss function parameter can be set to mean_squared_error (function without brackets as arg) for 4d
+        """
         for test_set in self.data_dict:
             self.results_dict[test_set] = {}
+
+            # get the trainings data & labels
             x_train, y_train = self.data_dict[test_set]['xtrain'], self.data_dict[test_set]['ytrain']
-            optimal_model = cv(X=x_train, y=y_train, method=krr, params=self.parameters_dict, nfolds=3)
+
+            # perform cross validation over the general parameter options
+            print("Performing cross validation for test set:", test_set)
+            optimal_model = cv(X=x_train, y=y_train, method=krr, params=self.parameters_dict,
+                               loss_function=loss_function, nrepetitions=self.num_cv_repetitions)
+
+            # store the results in the results dictionary
             self.results_dict[test_set]['cvloss'] = optimal_model.cvloss
             self.results_dict[test_set]['kernel'] = optimal_model.kernel
             self.results_dict[test_set]['kernelparameter'] = optimal_model.kernelparameter
             self.results_dict[test_set]['regularization'] = optimal_model.regularization
-            self.results_dict[test_set]['y_pred'] = optimal_model.predict(x_test=self.data_dict[test_set]['xtest'])
-        # save results dict to file
+
+            # get the predictions from the test set
+            self.results_dict[test_set]['y_pred'] = optimal_model.predict(self.data_dict[test_set]['xtest'])
+
+        # finally, save results dict to file
         with open(f'results.p', 'wb') as f:
             pickle.dump(self.results_dict, f)
 
+    def plot_roc_curve(self, biases):
+        """
+        Function that takes a set of biases and calculates the TPR and FPR.
+        After this, the ROC curve is plotted by calling cv with the optimal parameters from results.
 
-def roc_curve(n):
-    ''' your header here!
-    '''
+        This can somehow be done by using roc_fun as a loss function and calculater of tpr and fpr at the same time.
+        """
 
 
 def roc_fun(y_true, y_pred):
-    ''' your header here!
-    '''
+    """ """
 
 
-def krr_app(reg=False):
-    ''' your header here!
-    '''
+
+
+class assignment_3:
+    """ Class that is used to perform Assignment 3 """
+    def __init__(self, data_path="data/qm7.mat"):
+        self.data = np.loadtxt(data_path, encoding='').T
+        print(self.data)
+        self.matrices = self._get_matrices_from_data()
+        self.eigenvectors = self._get_eigenvectors_from_matrices()
+        self.X = None
+        self.y = None
+        self.optimal_width_param = None
+        self.optimal_regulization_param = None
+
+    def _get_matrices_from_data(self):
+        """ From the data file, get the matrices """
+        pass
+
+    def _get_eigenvectors_from_matrices(self):
+        """ From a List of matrices, get the eigenvectors """
+
+        eig_vals, eig_vecs = [], []
+        for matrix in self.matrices:
+            eig_vals.append(scipy.linalg.eigvals(matrix))
+            eig_vecs.append(scipy.linalg.eigh(matrix)[1])
+
+        # sort the eigenvectors by the eigenvalues in descending order
+        eig_vals, eig_vecs = zip(*sorted(zip(eig_vals, eig_vecs), key=lambda x: x[0], reverse=True))
+
+        return np.array(eig_vecs)
+
+    def plot_distances(self):
+        """ Plot the distances between all pairs of eigenvectors, and their respective labels """
+        pass
+
+    def fix_dataset(self):
+        """ Shuffle the data, split it into training and test set 5000/2165 and fix it """
+        # self.X =
+        # self.y =
+        pass
+
+    def apply_cv(self):
+        """
+        Apply cross validation on 2500 random training samples and fix them.
+        Also report the optimal parameters.
+
+        For:
+          - the width parameter of the gaussian kernel
+          - the regularization parameter (log between 10^-7 and 10^0)
+        """
+
+        # self.optimal_width_param =
+        # self.optimal_regulization_param =
+        pass
+
+    def plot_mae(self):
+        """ Plot the mean absolute error for the test set as a function of the number of training samples (n) """
+
+        pass
+
+    def plot_scatter(self):
+        """
+        Plot the scatter plot of points (y_i, ^y_i) with train and test data in two different colors
+
+        This is done for three different models that: underfit, fit well and overfit.
+        """
+
+        pass
+
 
 
 if __name__ == '__main__':
-    krr_application(data_path='data').search_for_optimal_parameters()
+    # krr_application(data_path='data').search_for_optimal_parameters()
+    assignment_3()
+    pass
