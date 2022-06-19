@@ -66,12 +66,12 @@ def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepe
     for param_combi_unnamed in it.product(*param_options):
         start_time = time.time()        # start timer
         counter += 1
-        param_combi_losses = []
         param_combination = {}
         for i, name in enumerate(params.keys()):
             param_name = name
             param_combination[param_name] = param_combi_unnamed[i]
 
+        param_combi_losses = []
         for repetion in range(nrepetitions):
             # divide x in nfolds random partitions of the same size
             kf = KFold(n_splits=nfolds)
@@ -364,8 +364,8 @@ class assignment_3:
         self.width_quantiles_values = None
 
         # results
-        self.optimal_width_param = 500
-        self.optimal_regulization_param = 0.01
+        self.optimal_width_param = 685.4993774414061
+        self.optimal_regulization_param = 5.623413251903491e-06
 
     def run(self):
         """ Run the assignment """
@@ -446,39 +446,49 @@ class assignment_3:
         y_predict = optimal_model.predict(X)
         error = mean_absolute_error(y, y_predict)
 
-        print(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.kernel}\n MAE: {error}")
+        print(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.regularization}\n MAE: {error}")
 
         # save results as txt
         with open("results/apply_cv.txt", "w") as f:
-            f.write(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.kernel}\n MAE: {error}")
+            f.write(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.regularization}\n MAE: {error}")
 
         self.optimal_width_param = optimal_model.kernelparameter
         self.optimal_regulization_param = optimal_model.regularization
 
-    def plot_mae(self):
+    def plot_mae(self, steps, load=False):
         """ Plot the mean absolute error for the test set as a function of the number of training samples (n) """
 
         kernelparameter = self.optimal_width_param
         regularization = self.optimal_regulization_param
         errors = []
+        numbers = np.linspace(100, 5000, steps)
 
-        for n in range(100, 5000):
-            print("n:", n)
-            X = self.X_train[:n]
-            y = self.y_train[:n]
-            model = krr(kernel='gaussian', kernelparameter=kernelparameter, regularization=regularization)
-            model.fit(X, y)
-            y_pred = model.predict(self.X_test)
-            mae = mean_absolute_error(self.y_test, y_pred)
-            errors.append(mae)
+        if load is False:
+            for n in numbers:
+                n = int(n)
+                print("n:", n)
+                X = self.X_train[:n]
+                y = self.y_train[:n]
+                model = krr(kernel='gaussian', kernelparameter=kernelparameter, regularization=regularization)
+                model.fit(X, y)
+                y_pred = model.predict(self.X_test)
+                mae = mean_absolute_error(self.y_test, y_pred)
+                errors.append(mae)
+            # save errors as a txt file
+            with open('results/plot_mae.txt', 'w') as f:
+                for error in errors:
+                    f.write(str(error) + '\n')
+        else:
+            with open("results/plot_mae.txt", "r") as f:
+                for line in f:
+                    errors.append(float(line))
 
-        # save errors as a txt file
-        with open('results/plot_mae.txt', 'w') as f:
-            for error in errors:
-                f.write(str(error) + '\n')
+        # plot the errors
+        plt.figure(figsize=(9, 9))
+        plt.plot(numbers, errors, 'o-')
+        plt.xlabel('Number of training samples')
+        plt.ylabel('MAE')
 
-        plt.figure(figsize=(12, 12))
-        plt.plot(errors)
         plt.show()
 
     def plot_scatter(self):
@@ -490,18 +500,18 @@ class assignment_3:
 
         X = self.X_train[:1000]
         y = self.y_train[:1000]
-        types = ['underfit', 'fit', 'overfit']
 
         models = {}
-        models['underfit'] = krr(kernel='linear', kernelparameter=0, regularization=0)
-        models['overfit'] = krr(kernel='linear', kernelparameter=1000, regularization=0)
+        models['underfit'] = krr(kernel='linear', kernelparameter=1, regularization=1e-7)
+        models['overfit'] = krr(kernel='linear', kernelparameter=100000, regularization=0)
         models['fit'] = krr(kernel='gaussian',
                             kernelparameter=self.optimal_width_param,
                             regularization=self.optimal_regulization_param)
 
         # create the data
-        predicts = {'underfit': None, 'overfit': None, 'fit': None}
+        predicts = {'underfit': {}, 'overfit': {}, 'fit': {}}
 
+        types = ['underfit', 'fit', 'overfit']
         # iterate over the models and plot the predictions
         for type in types:
             models[type].fit(X, y)
@@ -509,23 +519,20 @@ class assignment_3:
             predicts[type]['test'] = models[type].predict(self.X_test)
             plt.scatter(self.y_train, predicts[type]['train'], c='blue', label='train')
             plt.scatter(self.y_test, predicts[type]['test'], c='red', label='test')
-            plt.legend()
             plt.show()
 
-        # save the predictions as a json file
-        with open('results/plot_scatter.json', 'w') as f:
-            json.dump(predicts, f)
 
 
 
 if __name__ == '__main__':
 
     # krr_application(data_path='data').search_for_optimal_parameters()
-    #assignment_3().apply_cv()
-    testbiases = np.linspace(0,2,20)
-    testobject = krr_application(data_path= 'data')
-    testobject.plot_roc_curve(biases = testbiases)
+
+    if False:
+        testbiases = np.linspace(0,2,20)
+        testobject = krr_application(data_path= 'data')
+        testobject.plot_roc_curve(biases = testbiases)
     runner = assignment_3()
-    runner.apply_cv()
-    runner.plot_mae()
+    # runner.plot_mae(steps=10, load=True)
     runner.plot_scatter()
+
