@@ -278,7 +278,7 @@ class krr_application:
                           'kernelparameter': self.results_dict[testset]['kernelparameter'],
                           'regularization': self.results_dict[testset]['regularization']}
             for bias in biases:
-                model = cv(X = testset[xtrain], y = testset[ytrain], method = krr, params = param_dict, loss_function = roc_fun)
+                model = cv(X = testset['xtrain'], y = testset['ytrain'], method = krr, params = param_dict, loss_function = roc_fun, bias = bias)
                 rates.append(model.cvloss)
 
 
