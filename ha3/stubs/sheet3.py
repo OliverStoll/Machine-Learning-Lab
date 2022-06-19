@@ -20,6 +20,7 @@ import pickle
 import time
 import scipy.io as sio
 import pylab as pl
+from matplotlib import pyplot as plt
 from sklearn.model_selection import KFold, RepeatedKFold
 from mpl_toolkits.mplot3d import Axes3D
 import scipy
@@ -180,6 +181,7 @@ def eig_decomp(A):
 
 ##############################################################################
 
+
 class krr_application:
     """ Class that is used to perform Assignment 4 """
     def __init__(self, data_path):
@@ -257,40 +259,84 @@ class assignment_3:
     """ Class that is used to perform Assignment 3 """
     def __init__(self, data_path="data/qm7.mat"):
         self.data = sio.loadmat(data_path)
-        print(self.data)
-        self.matrices = self._get_matrices_from_data()
-        self.eigenvectors = self._get_eigenvectors_from_matrices()
-        self.X = None
-        self.y = None
+        self.data_len = len(self.data['X'])
+        self.train_split = 5000
+
+        # get eigenvalues as basic data
+        self.eigenvalues_sums = None
+        self.eigenvalues = None
+        self._get_eigenvalues_from_data()
+
+        # fixed data
+        self.labels = self.data['T'].reshape(-1)
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+        self._fix_dataset()
+
+        # cross validation
+        self.regulization_params = np.logspace(-7, 0, 5)
+        self.width_quantiles = [0.01, 0.99]  # [0.01, 0.1, 0.5, 0.9, 0.99]
+        self.width_quantiles_values = None
+
+        # results
         self.optimal_width_param = None
         self.optimal_regulization_param = None
 
-    def _get_matrices_from_data(self):
-        """ From the data file, get the matrices """
+    def run(self):
+        """ Run the assignment """
+        self.plot_distances()
 
-        pass
+    def _get_eigenvalues_from_data(self):
+        """ From the data (and there the list of matrices), get the eigenvectors """
 
-    def _get_eigenvectors_from_matrices(self):
-        """ From a List of matrices, get the eigenvectors """
+        eig_vals, eig_vals_sums = [], []
+        for matrix in np.real(self.data['X']):
+            eig_val = np.real(scipy.linalg.eigvals(matrix))
+            eig_val_sum = np.sum(eig_val)
+            eig_vals.append(eig_val)
+            eig_vals_sums.append(eig_val_sum)
 
-        eig_vals, eig_vecs = [], []
-        for matrix in self.matrices:
-            eig_vals.append(scipy.linalg.eigvals(matrix))
-            eig_vecs.append(scipy.linalg.eigh(matrix)[1])
+        # get the sorted indices of the eigenvalues
+        sorted_indices = np.argsort(eig_vals_sums).tolist()[::-1]
 
-        # sort the eigenvectors by the eigenvalues in descending order
-        eig_vals, eig_vecs = zip(*sorted(zip(eig_vals, eig_vecs), key=lambda x: x[0], reverse=True))
-        self.eigenvectors = np.array(eig_vecs)
+        # sort the eigenvalues by the sorted indices
+        self.eigenvalues = [eig_vals[i] for i in sorted_indices]
+        self.eigenvalues_sums = [eig_vals_sums[i] for i in sorted_indices]
+
+    def _fix_dataset(self):
+        """ Shuffle the data, split it into training and test set 5000/2165 and fix it """
+
+        # get the shuffled indices
+        shuffled_indices = np.random.permutation(self.data_len)
+        train_indices = shuffled_indices[:self.train_split]
+        test_indices = shuffled_indices[self.train_split:]
+
+        # convert eigenvalues and labels to numpy arrays
+        self.eigenvalues = np.array(self.eigenvalues)
+        self.labels = np.array(self.labels)
+
+        # fix the data
+        self.X_train, self.y_train = self.eigenvalues[train_indices], self.labels[train_indices]
+        self.X_test, self.y_test = self.eigenvalues[test_indices], self.labels[test_indices]
 
     def plot_distances(self):
         """ Plot the distances between all pairs of eigenvectors, and their respective labels """
-        pass
 
-    def fix_dataset(self):
-        """ Shuffle the data, split it into training and test set 5000/2165 and fix it """
-        # self.X =
-        # self.y =
-        pass
+        sums_x = []
+        sums_y = []
+        for i in range(self.data_len):
+            for j in range(self.data_len):
+                sum_x = np.abs(self.eigenvalues_sums[i] - self.eigenvalues_sums[j])
+                sum_y = np.abs(self.labels[i] - self.labels[j])
+                sums_x.append(sum_x)
+                sums_y.append(sum_y)
+
+        # plot the distances
+        plt.figure(figsize=(12, 12))
+        plt.scatter(sums_x, sums_y, s=1)
+        plt.show()
 
     def apply_cv(self):
         """
@@ -301,6 +347,22 @@ class assignment_3:
           - the width parameter of the gaussian kernel
           - the regularization parameter (log between 10^-7 and 10^0)
         """
+
+        # get the shuffled indices from the training set
+        shuffled_indices = np.random.permutation(self.train_split)[:2500]
+
+        X = self.X_train[shuffled_indices]
+        y = self.y_train[shuffled_indices]
+        X_sums = np.sum(X, axis=1)
+
+        # get quantiles of the eigenvalues_sums
+        self.width_quantiles_values = np.quantile(X_sums, self.width_quantiles, axis=0)
+        parameters = {}
+
+        # get the optimal width parameter by cross validation
+        result_model = cv(X=X, y=y, )
+
+
 
         # self.optimal_width_param =
         # self.optimal_regulization_param =
@@ -325,4 +387,4 @@ class assignment_3:
 if __name__ == '__main__':
 
     # krr_application(data_path='data').search_for_optimal_parameters()
-    assignment_3()
+    assignment_3().apply_cv()
