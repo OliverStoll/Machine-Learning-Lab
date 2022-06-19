@@ -270,19 +270,29 @@ class krr_application:
 
         This can somehow be done by using roc_fun as a loss function and calculater of tpr and fpr at the same time.
         """
+        self.data = self._load_data()
+        self.search_for_optimal_parameters()
+        rates = []
+        for testset in self.data:
+            param_dict = {'kernel': self.results_dict[testset]['kernel'],
+                          'kernelparameter': self.results_dict[testset]['kernelparameter'],
+                          'regularization': self.results_dict[testset]['regularization']}
+            for bias in biases:
+                model = cv(X = testset[xtrain], y = testset[ytrain], method = krr, params = param_dict, loss_function = roc_fun)
+                rates.append(model.cvloss)
+
+
 
 
 def roc_fun(y_true, y_pred):
     """ """
-    n = len(y_true)
     pred_positives = np.sum(y_pred == 1)
     true_positives = np.sum(y_true == 1)
     pred_negatives  = np.sum(y_pred == -1)
     true_negatives = np.sum(y_true == -1)
     tpr = true_positives/pred_positives
     fpr = true_negatives/pred_negatives
-    error = zero_one_loss(y_true,y_pred)
-    return(tpr,fpr,error)
+    return(np.array([tpr,fpr]))
 
 
 
