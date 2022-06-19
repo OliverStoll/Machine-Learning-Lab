@@ -416,5 +416,5 @@ class assignment_3:
 
 if __name__ == '__main__':
 
-    # krr_application(data_path='data').search_for_optimal_parameters()
+    krr_application(data_path='data').search_for_optimal_parameters()
     assignment_3().apply_cv()
