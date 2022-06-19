@@ -317,8 +317,6 @@ class assignment_3:
     def run(self):
         """ Run the assignment """
         self.plot_distances()
-        self.apply_cv()
-        self.plot_scatter()
 
     def _get_eigenvalues_from_data(self):
         """ From the data (and there the list of matrices), get the eigenvectors """
@@ -359,9 +357,11 @@ class assignment_3:
         sums_x = []
         sums_y = []
         for i in range(self.data_len):
-            # print(i)
-            sums_x.append([self.eigenvalues_sums[i] - eigval_sum for eigval_sum in self.eigenvalues_sums])
-            sums_y.append([self.labels[i] - label for label in self.labels])
+            for j in range(self.data_len):
+                sum_x = np.abs(self.eigenvalues_sums[i] - self.eigenvalues_sums[j])
+                sum_y = np.abs(self.labels[i] - self.labels[j])
+                sums_x.append(sum_x)
+                sums_y.append(sum_y)
 
         # plot the distances
         plt.figure(figsize=(12, 12))
@@ -387,19 +387,16 @@ class assignment_3:
 
         # get quantiles of the eigenvalues_sums
         self.width_quantiles_values = np.quantile(X_sums, self.width_quantiles, axis=0)
-        parameters = {'kernel': ['gaussian'],
-                      'kernelparameter': self.width_quantiles_values,
-                      'regularization': self.regulization_params}
+        parameters = {}
 
         # get the optimal width parameter by cross validation
-        optimal_model = cv(X=X, y=y, method=krr, params=parameters, nrepetitions=1, nfolds=5)
-        y_predict = optimal_model.predict(X)
-        error = mean_absolute_error(y, y_predict)
+        result_model = cv(X=X, y=y, )
 
-        print(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.kernel}\n MAE: {error}")
 
-        self.optimal_width_param = optimal_model.kernelparameter
-        self.optimal_regulization_param = optimal_model.regularization
+
+        # self.optimal_width_param =
+        # self.optimal_regulization_param =
+        pass
 
     def plot_mae(self):
         """ Plot the mean absolute error for the test set as a function of the number of training samples (n) """
@@ -413,36 +410,11 @@ class assignment_3:
         This is done for three different models that: underfit, fit well and overfit.
         """
 
-        X = self.X_train[:1000]
-        y = self.y_train[:1000]
-        types = ['underfit', 'fit', 'overfit']
-
-        models = {}
-        models['underfit'] = krr(kernel='linear', kernelparameter=0, regularization=0)
-        models['overfit'] = krr(kernel='linear', kernelparameter=1000, regularization=0)
-        models['fit'] = krr(kernel='gaussian',
-                            kernelparameter=self.optimal_width_param,
-                            regularization=self.optimal_regulization_param)
-
-        # create the data
-        predicts = {'underfit': None, 'overfit': None, 'fit': None}
-
-        # iterate over the models and plot the predictions
-        for type in types:
-            models[type].fit(X, y)
-            predicts[type]['train'] = models[type].predict(self.X_train)
-            predicts[type]['test'] = models[type].predict(self.X_test)
-            plt.scatter(self.y_train, predicts[type]['train'], c='blue', label='train')
-            plt.scatter(self.y_test, predicts[type]['test'], c='red', label='test')
-            plt.legend()
-            plt.show()
-
-
-
-
+        pass
 
 
 
 if __name__ == '__main__':
 
+    # krr_application(data_path='data').search_for_optimal_parameters()
     assignment_3().apply_cv()
