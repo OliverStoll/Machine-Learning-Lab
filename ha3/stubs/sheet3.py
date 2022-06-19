@@ -13,6 +13,8 @@ Write your implementations in the given functions stubs!
 
 (c) Daniel Bartz, TU Berlin, 2013
 """
+import json
+
 import numpy as np
 import scipy.linalg as la
 import itertools as it
@@ -324,8 +326,8 @@ class assignment_3:
         self.width_quantiles_values = None
 
         # results
-        self.optimal_width_param = None
-        self.optimal_regulization_param = None
+        self.optimal_width_param = 500
+        self.optimal_regulization_param = 0.01
 
     def run(self):
         """ Run the assignment """
@@ -408,19 +410,38 @@ class assignment_3:
 
         print(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.kernel}\n MAE: {error}")
 
+        # save results as txt
+        with open("results/apply_cv.txt", "w") as f:
+            f.write(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.kernel}\n MAE: {error}")
+
         self.optimal_width_param = optimal_model.kernelparameter
         self.optimal_regulization_param = optimal_model.regularization
-
-
-        # self.optimal_width_param =
-        # self.optimal_regulization_param =
-        pass
 
     def plot_mae(self):
         """ Plot the mean absolute error for the test set as a function of the number of training samples (n) """
 
-        pass
+        kernelparameter = self.optimal_width_param
+        regularization = self.optimal_regulization_param
+        errors = []
 
+        for n in range(100, 5000):
+            print("n:", n)
+            X = self.X_train[:n]
+            y = self.y_train[:n]
+            model = krr(kernel='gaussian', kernelparameter=kernelparameter, regularization=regularization)
+            model.fit(X, y)
+            y_pred = model.predict(self.X_test)
+            mae = mean_absolute_error(self.y_test, y_pred)
+            errors.append(mae)
+
+        # save errors as a txt file
+        with open('results/plot_mae.txt', 'w') as f:
+            for error in errors:
+                f.write(str(error) + '\n')
+
+        plt.figure(figsize=(12, 12))
+        plt.plot(errors)
+        plt.show()
 
     def plot_scatter(self):
         """
@@ -453,9 +474,16 @@ class assignment_3:
             plt.legend()
             plt.show()
 
+        # save the predictions as a json file
+        with open('results/plot_scatter.json', 'w') as f:
+            json.dump(predicts, f)
+
 
 
 if __name__ == '__main__':
 
     # krr_application(data_path='data').search_for_optimal_parameters()
-    assignment_3().apply_cv()
+    runner = assignment_3()
+    runner.apply_cv()
+    runner.plot_mae()
+    runner.plot_scatter()
