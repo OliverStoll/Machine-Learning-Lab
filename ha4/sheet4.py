@@ -38,15 +38,17 @@ class svm_qp():
         self.Y_sv = None
 
     def fit(self, X, Y):
-        # INSERT_CODE
 
+        K = buildKernel(X.T)
+        n,d = X.shape
+        one = np.ones(n)
         # Here you have to set the matrices as in the general QP problem
-        # P =
-        # q =
-        # G =
-        # h =
-        # A =   # hint: this has to be a row vector
-        # b =   # hint: this has to be a scalar
+        P = ((K * Y).T * Y).T
+        q = - one
+        G = - np.eye(n)
+        h = np.zeros(n)
+        A = one.reshape(1,n) # hint: this has to be a row vector
+        b = 0  # hint: this has to be a scalar
 
         # this is already implemented so you don't have to
         # read throught the cvxopt manual
@@ -56,13 +58,16 @@ class svm_qp():
                             cvxmatrix(h, tc='d'),
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
-
-        # b =
+        indexes = np.where(alpha != 0)
+        self.alpha_sv = alpha[indexes]
+        self.X_sv = X[indexes]
+        self.Y_sv = Y[indexes]
+        self.b = 0
 
     def predict(self, X):
-        # INSERT_CODE
-
-        return self
+        K = buildKernel(self.X_sv.T,X.T)
+        vec = self.alpha_sv * self.Y_sv
+        return(K.T @ vec)
 
 
 # This is already implemented for your convenience
@@ -88,8 +93,35 @@ class svm_sklearn():
 
 
 def plot_boundary_2d(X, y, model):
-    # INSERT CODE
-    pass
+    fig,ax = plt.subplots()
+    pos_inds = np.where(np.sign(y) == 1)
+    neg_inds = np.where(np.sign(y) == -1)
+    X_c1 = X[pos_inds]
+    X_c2 = X[neg_inds]
+    ax.scatter(x = X_c1[:,0],y = X_c1[:,1], label = 'class1', c = 'b')
+    ax.scatter(x = X_c2[:,0],y = X_c2[:,1], label = 'class2',c = 'r')
+
+
+
+    '''draw contour line'''
+
+    grid_density = 100
+
+    xmax = np.max(X[:, 0])
+    xmin = np.min(X[:, 1])
+    ymax = np.max(X[:, 0])
+    ymin = np.min(X[:, 1])
+    xvals = np.linspace(xmin, xmax, grid_density)
+    yvals = np.linspace(ymin, ymax, grid_density)
+    x, y = np.meshgrid(xvals, yvals)
+    points = np.array([x.flatten(), y.flatten()]).T
+    targets = model.predict(points)
+
+    ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
+    plt.show()
+
+
+
 
 
 def sqdistmat(X, Y=False):
@@ -105,7 +137,7 @@ def sqdistmat(X, Y=False):
 
 def buildKernel(X, Y=False, kernel='linear', kernelparameter=0):
     d, n = X.shape
-    if Y.isinstance(bool) and Y is False:
+    if type(Y) is bool and Y is False:
         Y = X
     if kernel == 'linear':
         K = np.dot(X.T, Y)
@@ -202,12 +234,14 @@ class neural_network(Module):
             plt.show()
 
 
-if __name__ == '__main__':
-    print("TEST")
-    nn = neural_network(layers=[2, 100, 2], scale=.1, p=.2, lr=.01, lam=.01)
-    nn.train = True
-    # create random matrix X of size (5,5)
-    X = np.random.rand(5, 5)
-    W = np.random.rand(5, 5)
 
-    nn.relu(X, W, 0)
+
+if __name__ == '__main__':
+    X = np.array([[0,1],[0,2],[5,1],[5,4]])
+    y = np.array([1,1,-1,-1])
+    model = svm_qp()
+    model.fit(X = X, Y = y)
+    model.predict(np.array([[0,1],[1,2]]))
+    #X_grid,y_grid = grid_eval(X = X, y = y,model = model, grid_density=100)
+
+    plot_boundary_2d(X = X,y = y, model= model)
