@@ -126,32 +126,49 @@ class neural_network(Module):
         self.weights = ParameterList([Parameter(scale * torch.randn(m, n)) for m, n in zip(layers[:-1], layers[1:])])
         self.biases = ParameterList([Parameter(scale * torch.randn(n)) for n in layers[1:]])
 
-        self.p = p
-        self.lr = lr
-        self.lam = lam
+        self.p = p  # dropout rate
+        self.lr = lr  # learning rate
+        self.lam = lam  # weight decay coefficient
         self.train = False
 
     def relu(self, X, W, b):
-        # TODO
-        print("Relu Dimensions: ", W.shape(), b.shape())
-
-
+        # print("Relu Dimensions: ", W.shape, b.shape)
+        if self.train:
+            Z = torch.matmul(X, W) + b
+            # apply relu
+            Z[Z < 0] = 0
+            # apply dropout bernoulli
+            dropout_mask = torch.rand(Z.shape) < self.p
+            Z[dropout_mask] = 0
+        else:
+            Z = torch.matmul(X, W) * (1 - self.p)  # scale down by p, for testing
+            Z = Z + b
+            Z[Z < 0] = 0
+        return Z
 
     def softmax(self, X, W, b):
-        # TODO
-        pass
+        Z = torch.matmul(X, W) + b
+        pred = torch.exp(Z) / torch.sum(torch.exp(Z), dim=1, keepdims=True)
+        return pred
 
     def forward(self, X):
         X = torch.tensor(X, dtype=torch.float)
-        # TODO
+        for W, b in zip(self.weights[:-1], self.biases[:-1]):
+            X = self.relu(X, W, b)
+        X = self.softmax(X, self.weights[-1], self.biases[-1])
         return X
 
     def predict(self, X):
         return self.forward(X).detach().numpy()
 
     def loss(self, ypred, ytrue):
-        # TODO
-        pass
+        # implement cross entropy loss
+        assert ypred.shape == ytrue.shape
+        sum = 0
+        for i in range(ypred.shape[0]):
+            for c in range(ypred.shape[1]):
+                sum += ytrue[i, c] * torch.log(ypred[i, c])
+        return -sum / ypred.shape[0]
 
     def fit(self, X, y, nsteps=1000, bs=100, plot=False):
         X, y = torch.tensor(X), torch.tensor(y)
@@ -183,3 +200,14 @@ class neural_network(Module):
             plt.plot(range(nsteps), Aval, label='Validation acc')
             plt.legend()
             plt.show()
+
+
+if __name__ == '__main__':
+    print("TEST")
+    nn = neural_network(layers=[2, 100, 2], scale=.1, p=.2, lr=.01, lam=.01)
+    nn.train = True
+    # create random matrix X of size (5,5)
+    X = np.random.rand(5, 5)
+    W = np.random.rand(5, 5)
+
+    nn.relu(X, W, 0)
