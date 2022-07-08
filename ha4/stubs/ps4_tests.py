@@ -71,6 +71,7 @@ class TestSheet4(unittest.TestCase):
         imp.plot_boundary_2d(X_tr, (-Y_tr).argmax(1), m)
         print('test case loss', loss)
         self.assertTrue(loss < 0.25, msg='neural_network: Error. The loss is %.2f and should be below 0.25' % loss)
-        
+
+
 if __name__ == '__main__':
     unittest.main()

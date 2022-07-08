@@ -22,6 +22,7 @@ from cvxopt import matrix as cvxmatrix
 import numpy as np
 import torch
 from torch.nn import Module, Parameter, ParameterList
+from torch.optim import SGD
 
 
 class svm_qp():
@@ -131,23 +132,25 @@ class neural_network(Module):
         self.train = False
 
     def relu(self, X, W, b):
-        # YOUR CODE HERE!
-        pass
+        # TODO
+        print("Relu Dimensions: ", W.shape(), b.shape())
+
+
 
     def softmax(self, X, W, b):
-        # YOUR CODE HERE!
+        # TODO
         pass
 
     def forward(self, X):
         X = torch.tensor(X, dtype=torch.float)
-        # YOUR CODE HERE!
+        # TODO
         return X
 
     def predict(self, X):
         return self.forward(X).detach().numpy()
 
     def loss(self, ypred, ytrue):
-        # YOUR CODE HERE!
+        # TODO
         pass
 
     def fit(self, X, y, nsteps=1000, bs=100, plot=False):
