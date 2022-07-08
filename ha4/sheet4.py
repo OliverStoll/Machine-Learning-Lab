@@ -38,11 +38,12 @@ class svm_qp():
         self.Y_sv = None
 
     def fit(self, X, Y):
+        n,d = X.shape
 
         K = buildKernel(X.T)
-        n,d = X.shape
+
         one = np.ones(n)
-        # Here you have to set the matrices as in the general QP problem
+
         P = ((K * Y).T * Y).T
         q = - one
         G = - np.eye(n)
