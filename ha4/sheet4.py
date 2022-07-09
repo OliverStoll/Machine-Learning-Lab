@@ -40,14 +40,14 @@ class svm_qp():
     def fit(self, X, Y):
         n,d = X.shape
 
-        K = buildKernel(X.T)
+        K = buildKernel(X.T).T
 
         one = np.ones(n)
-
-        P = ((K * Y).T * Y).T
+        cee = np.full(n,fill_value=self.C)
+        P = ((K * Y).T * Y)
         q = - one
-        G = - np.eye(n)
-        h = np.zeros(n)
+        G = np.concatenate([-np.eye(n),np.eye(n)], axis = 0)
+        h = np.concatenate([np.zeros(n),cee], axis = 0)
         A = one.reshape(1,n) # hint: this has to be a row vector
         b = 0  # hint: this has to be a scalar
 
