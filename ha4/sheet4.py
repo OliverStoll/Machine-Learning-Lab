@@ -64,23 +64,32 @@ class svm_qp():
                             cvxmatrix(h, tc='d'),
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
-        indexes = np.where(alpha > 1e-5)[0]
-        self.alpha_sv = alpha[indexes]
-        self.X_sv = X[indexes]
-        self.Y_sv = Y[indexes]
+        indexes_sv = np.where(alpha > 1e-5)[0]
+        self.alpha_sv = alpha[indexes_sv]
+        self.X_sv = X[indexes_sv]
+        self.Y_sv = Y[indexes_sv]
         '''calculate bias'''
-        m = len(self.alpha_sv)
-        self.K_sv = buildKernel(self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
-        vector = self.alpha_sv * self.Y_sv
-        biases = self.Y_sv - (self.K_sv @ vector).T
-        self.b = np.average(biases)
-        print(np.dot(self.alpha_sv,self.Y_sv))
+        indexes_bias = np.where(self.alpha_sv < self.C - 1e-5)[0]
+        alpha_bias = self.alpha_sv[indexes_bias]
+        X_bias = X[indexes_bias]
+        Y_bias = Y[indexes_bias]
+        K_bias = buildKernel(self.X_sv.T, X_bias.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+        vector_sv = self.alpha_sv * self.Y_sv
+        func_vals = K_bias.T @ vector_sv
+        biases = func_vals - 1/Y_bias
+        if len(indexes_bias) > 0:
+            self.b = np.mean(biases)
+        else:
+            self.b = 0
+        '''test y_i f(x_i) = 1'''
+        results_bias = self.predict(X_bias)
+        print('biastest=',Y_bias * results_bias)
+        #print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
         prebias = K.T @ vec
-        return np.sign(prebias + self.b)
-
+        return prebias - self.b
 
 
 # This is already implemented for your convenience
@@ -105,7 +114,7 @@ class svm_sklearn():
         return self.clf.decision_function(X)
 
 
-def plot_boundary_2d(X, y, model):
+def plot_boundary_2d(X, y, model,title = 'whatever'):
 
     fig,ax = plt.subplots()
     pos_inds = np.where(np.sign(y) == 1)[0]
@@ -144,6 +153,7 @@ def plot_boundary_2d(X, y, model):
     ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
     ax.set_xlim([xmin ,xmax])
     ax.set_ylim([ymin,ymax])
+    plt.title(f'{title}')
     ax.legend(loc = 'upper left')
     plt.show()
 
@@ -270,8 +280,8 @@ class assignment_4():
     def find_optimal_parameters(self):
         # find optimal parameters for gaussian kernel
         params = {'kernel': ['gaussian'],
-                  'kernelparameter': np.linspace(2, 10, 5),
-                  'C': np.linspace(1, 10, 5)}
+                  'kernelparameter': np.linspace(.1, 5, 10),
+                  'C': np.linspace(.1, 5, 10)}
         optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
         print("Optimal parameters found", optimal_model.C, optimal_model.kernelparameter)
         plot_boundary_2d(self.X_test, self.y_test, optimal_model)
@@ -279,11 +289,11 @@ class assignment_4():
         self.optimal_model = optimal_model
 
     def train_overfit_underfit(self):
-        overfit_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1)
-        underfit_model = svm_qp(kernel='gaussian', kernelparameter=1e-5, C=1)
+        overfit_model = svm_qp(kernel='gaussian', kernelparameter=.01, C=100)
+        underfit_model = svm_qp(kernel='gaussian', kernelparameter=1, C=10)
         for model in [overfit_model, underfit_model]:
             model.fit(self.X_train, self.y_train)
-            plot_boundary_2d(self.X_test, self.y_test, model)
+            plot_boundary_2d(self.X_test, self.y_test, model, title = f'{model}')
 
     def plot_roc(self):
         """ Plot ROC curve for varying bias parameter b of SVM """
@@ -315,3 +325,4 @@ def Assignment_5():
 if __name__ == '__main__':
     runner = assignment_4()
     runner.find_optimal_parameters()
+    #runner.train_overfit_underfit()
