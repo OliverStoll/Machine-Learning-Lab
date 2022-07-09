@@ -40,11 +40,11 @@ class svm_qp():
     def fit(self, X, Y):
         n,d = X.shape
 
-        K = buildKernel(X.T).T
+        K = buildKernel(X.T)
 
         one = np.ones(n)
         cee = np.full(n,fill_value=self.C)
-        P = ((K * Y).T * Y)
+        P = ((K * Y).T * Y).T
         q = - one
         G = np.concatenate([-np.eye(n),np.eye(n)], axis = 0)
         h = np.concatenate([np.zeros(n),cee], axis = 0)
