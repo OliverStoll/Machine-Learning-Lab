@@ -44,7 +44,6 @@ class svm_qp():
 
         K = buildKernel(X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
 
-        # print(np.linalg.matrix_rank(K))
         one = np.ones(n)
         cee = np.full(n, fill_value=self.C)
         P = ((K * Y).T * Y).T
@@ -74,13 +73,11 @@ class svm_qp():
         vector = self.alpha_sv * self.Y_sv
         biases = self.Y_sv - (self.K_sv @ vector).T
         self.b = np.average(biases)
-        print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
         prebias = K.T @ vec
         return np.sign(prebias + self.b)
-
 
 
 # This is already implemented for your convenience
@@ -258,35 +255,61 @@ class neural_network(Module):
             plt.show()
 
 
-class assignment_4():
+class Assignment_4():
 
     def __init__(self):
         # load .npz data
         data = np.load('data/easy_2d.npz')
         self.X_train, self.y_train = data['X_tr'].T, data['Y_tr']
         self.X_test, self.y_test = data['X_te'].T, data['Y_te']
-        print("Data loaded")
+        self.optimal_kernelparameter = None
+        self.optimal_model = None
+        self.optimal_C = None
 
     def find_optimal_parameters(self):
         # find optimal parameters for gaussian kernel
         params = {'kernel': ['gaussian'],
-                  'kernelparameter': np.linspace(2, 10, 5),
-                  'C': np.linspace(1, 10, 5)}
+                  'kernelparameter': np.linspace(0.1, 3, 5),
+                  'C': np.linspace(0.1, 3, 5)}
         optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
-        print("Optimal parameters found", optimal_model.C, optimal_model.kernelparameter)
+        print("Optimal parameters found [kernel, c]", optimal_model.kernelparameter, optimal_model.C)
         plot_boundary_2d(self.X_test, self.y_test, optimal_model)
         print("DONE")
         self.optimal_model = optimal_model
 
     def train_overfit_underfit(self):
-        overfit_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1)
-        underfit_model = svm_qp(kernel='gaussian', kernelparameter=1e-5, C=1)
+        overfit_model = svm_qp(kernel='gaussian', kernelparameter=100, C=1)
+        underfit_model = svm_qp(kernel='gaussian', kernelparameter=0.1, C=0.001)
         for model in [overfit_model, underfit_model]:
             model.fit(self.X_train, self.y_train)
             plot_boundary_2d(self.X_test, self.y_test, model)
 
     def plot_roc(self):
         """ Plot ROC curve for varying bias parameter b of SVM """
+
+        if self.optimal_model is None:
+            self.optimal_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1.5)
+            self.optimal_model.fit(self.X_train, self.y_train)
+        b = np.linspace(-2, 2, 10000)
+        fpr, tpr = [], []
+        model = self.optimal_model
+        total_p = np.sum(self.y_test == 1)
+        total_n = np.sum(self.y_test == -1)
+        for b_ in b:
+            model.b = b_
+            y_pred = model.predict(self.X_test)
+            # compute the number of true positives and false positives
+            tp = np.sum((y_pred == 1) & (self.y_test == 1))
+            fp = np.sum((y_pred == 1) & (self.y_test == -1))
+            tpr += [tp / total_p]
+            fpr += [fp / total_n]
+
+        plt.plot(fpr, tpr)
+        plt.xlabel('False positive rate')
+        plt.ylabel('True positive rate')
+        plt.title('ROC curve for SVM over different bias parameters')
+        plt.show()
+
 
 
 class assignment_5():
@@ -313,5 +336,7 @@ def Assignment_5():
 
 
 if __name__ == '__main__':
-    runner = assignment_4()
-    runner.find_optimal_parameters()
+    runner = Assignment_4()
+    # runner.find_optimal_parameters()
+    # runner.train_overfit_underfit()
+    runner.plot_roc()
