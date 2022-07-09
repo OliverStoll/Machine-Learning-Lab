@@ -78,7 +78,8 @@ class svm_qp():
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
-        return(K.T @ vec + self.b)
+        prebias = K.T @ vec
+        return prebias +self.b
 
 
 # This is already implemented for your convenience
