@@ -175,14 +175,6 @@ def buildKernel(X, Y=False, kernel='linear', kernelparameter=0):
         raise Exception('unspecified kernel')
     return K
 
-def Assignment_5():
-    data = dict(np.load('data/iris.npz'))
-    X = data['X'].T
-    Y = data['Y'].T
-    model = svm_qp()
-    model.fit(X,Y)
-    plot_boundary_2d(X,Y,model)
-    pass
 
 class neural_network(Module):
     def __init__(self, layers=[2, 100, 2], scale=.1, p=None, lr=None, lam=None):
@@ -287,6 +279,17 @@ class assignment_4():
 
     def train_overfit_underfit(self):
         overfit_model = svm_qp()
+
+
+def Assignment_5():
+    data = dict(np.load('data/iris.npz'))
+    X = data['X'].T
+    Y = data['Y'].T
+    model = svm_qp()
+    model.fit(X,Y)
+    plot_boundary_2d(X,Y,model)
+    pass
+
 
 if __name__ == '__main__':
     #X = np.array([[0,1],[1,3],[5,1],[10,4]])
