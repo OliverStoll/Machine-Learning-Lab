@@ -280,9 +280,22 @@ class assignment_4():
     def train_overfit_underfit(self):
         overfit_model = svm_qp()
 
+class assignment_5():
+    def __init__(self, model = svm_qp):
+        self.data_dict = dict(np.load('data/iris.npz'))
+        self.X = data['X'].T
+        self.Y = data['Y'].T
+        self.model = model()
+    def lin_test(self):
+        n,d = self.X.shape
+        '''for each class check for loinear separability from other two classes'''
+        for clas in range(1,4):
+            self.Y_mod = self.Y
+            for i in range(n):
+
 
 def Assignment_5():
-    data = dict(np.load('data/iris.npz'))
+    data =
     X = data['X'].T
     Y = data['Y'].T
     model = svm_qp()
