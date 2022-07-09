@@ -63,7 +63,7 @@ class svm_qp():
                             cvxmatrix(h, tc='d'),
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
-        indexes = np.where(alpha != 0)
+        indexes = np.where(alpha > 1e-5)[0]
         self.alpha_sv = alpha[indexes]
         self.X_sv = X[indexes]
         self.Y_sv = Y[indexes]
@@ -71,13 +71,13 @@ class svm_qp():
         m = len(self.alpha_sv)
         self.K_sv = buildKernel(self.X_sv.T)
         vector = self.alpha_sv * self.Y_sv
-        biases = self.Y_sv - self.K_sv @ vector
+        biases = self.Y_sv - (self.K_sv @ vector).T
         self.b = np.average(biases)
 
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T)
         vec = self.alpha_sv * self.Y_sv
-        return(K.T @ vec - self.b)
+        return(K.T @ vec + self.b)
 
 
 # This is already implemented for your convenience
@@ -103,6 +103,7 @@ class svm_sklearn():
 
 
 def plot_boundary_2d(X, y, model):
+
     fig,ax = plt.subplots()
     pos_inds = np.where(np.sign(y) == 1)
     neg_inds = np.where(np.sign(y) == -1)
@@ -115,19 +116,31 @@ def plot_boundary_2d(X, y, model):
 
     '''draw contour line'''
 
-    grid_density = 100
+    grid_density = 1000
 
     xmax = np.max(X[:, 0])
-    xmin = np.min(X[:, 1])
-    ymax = np.max(X[:, 0])
+    xmin = np.min(X[:, 0])
+    ymax = np.max(X[:, 1])
     ymin = np.min(X[:, 1])
     xvals = np.linspace(xmin, xmax, grid_density)
     yvals = np.linspace(ymin, ymax, grid_density)
     x, y = np.meshgrid(xvals, yvals)
     points = np.array([x.flatten(), y.flatten()]).T
-    targets = model.predict(points)
+    predictions = model.predict(points)
+    n = grid_density**2
+    if len(predictions.shape) ==2:
+        targets = np.zeros(n)
+        for i in range(n):
+            if predictions[i][0] > predictions[i][1]:
+                targets[i] = 1
+            else:
+                targets[i] = -1
+    else:
+        targets = np.sign(predictions)
 
     ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
+    ax.set_xlim([xmin ,xmax])
+    ax.set_ylim([ymin,ymax])
     plt.show()
 
 
@@ -247,7 +260,7 @@ class neural_network(Module):
 
 
 if __name__ == '__main__':
-    X = np.array([[0,1],[0,2],[5,1],[5,4]])
+    X = np.array([[0,1],[1,3],[5,1],[10,4]])
     y = np.array([1,1,-1,-1])
     model = svm_qp()
     model.fit(X = X, Y = y)
