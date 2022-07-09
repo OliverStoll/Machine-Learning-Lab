@@ -268,7 +268,7 @@ class assignment_4():
     def find_optimal_parameters(self):
         # find optimal parameters for gaussian kernel
         params = {'kernel': ['gaussian'],
-                  'kernelparameter': np.linspace(2, 10, 5),
+                  'kernelparameter': np.linspace(2, 10, 5), 
                   'C': np.linspace(1, 10, 5)}
         optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
         print("Optimal parameters found", optimal_model.C, optimal_model.kernelparameter)
