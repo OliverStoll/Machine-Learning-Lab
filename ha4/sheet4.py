@@ -74,11 +74,13 @@ class svm_qp():
         vector = self.alpha_sv * self.Y_sv
         biases = self.Y_sv - (self.K_sv @ vector).T
         self.b = np.average(biases)
-
+        print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
-        return(K.T @ vec + self.b)
+        prebias = K.T @ vec
+        return np.sign(prebias + self.b)
+
 
 
 # This is already implemented for your convenience
@@ -106,8 +108,8 @@ class svm_sklearn():
 def plot_boundary_2d(X, y, model):
 
     fig,ax = plt.subplots()
-    pos_inds = np.where(np.sign(y) == 1)
-    neg_inds = np.where(np.sign(y) == -1)
+    pos_inds = np.where(np.sign(y) == 1)[0]
+    neg_inds = np.where(np.sign(y) == -1)[0]
     X_c1 = X[pos_inds]
     X_c2 = X[neg_inds]
     ax.scatter(x = X_c1[:,0],y = X_c1[:,1], label = 'class1', c = 'b')
@@ -142,6 +144,7 @@ def plot_boundary_2d(X, y, model):
     ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
     ax.set_xlim([xmin ,xmax])
     ax.set_ylim([ymin,ymax])
+    ax.legend(loc = 'upper left')
     plt.show()
 
 
