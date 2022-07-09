@@ -18,11 +18,13 @@ import scipy.linalg as la
 import matplotlib.pyplot as plt
 import sklearn.svm
 from cvxopt.solvers import qp
+from cvxopt import solvers
 from cvxopt import matrix as cvxmatrix
 import numpy as np
 import torch
 from torch.nn import Module, Parameter, ParameterList
 from torch.optim import SGD
+from sheet3 import cv
 
 
 class svm_qp():
@@ -41,7 +43,7 @@ class svm_qp():
         n,d = X.shape
 
         K = buildKernel(X.T)
-        print(np.linalg.matrix_rank(K))
+        # print(np.linalg.matrix_rank(K))
         one = np.ones(n)
         cee = np.full(n,fill_value=self.C)
         P = ((K * Y).T * Y).T
@@ -57,13 +59,15 @@ class svm_qp():
 
         # this is already implemented so you don't have to
         # read throught the cvxopt manual
+        solvers.options['show_progress'] = False
+
         alpha = np.array(qp(cvxmatrix(P, tc='d'),
                             cvxmatrix(q, tc='d'),
                             cvxmatrix(G, tc='d'),
                             cvxmatrix(h, tc='d'),
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
-        indexes = np.where(alpha != 0)
+        indexes = np.where(alpha > 1e-5)[0]
         self.alpha_sv = alpha[indexes]
         self.X_sv = X[indexes]
         self.Y_sv = Y[indexes]
@@ -77,7 +81,7 @@ class svm_qp():
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T)
         vec = self.alpha_sv * self.Y_sv
-        return(K.T @ vec - self.b)
+        return(K.T @ vec + self.b)
 
 
 # This is already implemented for your convenience
@@ -129,9 +133,6 @@ def plot_boundary_2d(X, y, model):
 
     ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
     plt.show()
-
-
-
 
 
 def sqdistmat(X, Y=False):
@@ -245,6 +246,26 @@ class neural_network(Module):
 
 
 
+class assignment_4():
+
+
+    def __init__(self):
+        # load .npz data
+        data = np.load('data/easy_2d.npz')
+        self.X_train, self.y_train = data['X_tr'].T, data['Y_tr']
+        self.X_test, self.y_test = data['X_te'].T, data['Y_te']
+        print("Data loaded")
+
+    def find_optimal_parameters(self):
+        # find optimal parameters for gaussian kernel
+        params = {'kernel': ['gaussian'],
+                  'kernelparameter': np.logspace(-4, 4, 20),
+                  'C': np.logspace(-2, 2, 10)}
+        optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
+        print("Optimal parameters found")
+
+    def train_overfit_underfit(self):
+        overfit_model = svm_qp()
 
 if __name__ == '__main__':
     X = np.array([[0,1],[0,2],[5,1],[5,4]])

@@ -1,0 +1,539 @@
+""" ps3_implementation.py
+
+PUT YOUR NAME HERE:
+Oliver Stoll
+Anton Hopmann
+
+
+Write the functions
+- cv
+- zero_one_loss
+- krr
+Write your implementations in the given functions stubs!
+
+
+(c) Daniel Bartz, TU Berlin, 2013
+"""
+import json
+
+import numpy as np
+import scipy.linalg as la
+import itertools as it
+import pickle
+import time
+import scipy.io as sio
+import pylab as pl
+from matplotlib import pyplot as plt
+from sklearn.model_selection import KFold, RepeatedKFold
+from mpl_toolkits.mplot3d import Axes3D
+import scipy
+
+
+def zero_one_loss(y_true, y_pred):
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+    return np.average(y_true == np.sign(y_pred))
+
+
+def mean_squared_error(y_true, y_pred):
+    # compute the mean squared error
+    return np.mean((y_true - y_pred) ** 2)
+
+
+def mean_absolute_error(y_true, y_pred):
+    """ Loss function that return the average of the absolutes of the differences between label and prediction """
+
+    assert len(y_true) == len(y_pred)
+    errors = []
+    for index in range(len(y_true)):
+        abs_error = np.abs(y_true - y_pred)
+        errors.append(abs_error)
+    return np.mean(errors)
+
+
+def cv(X, y, method, params, loss_function=mean_absolute_error, nfolds=10, nrepetitions=5, bias=None):
+    """ Creates a class 'method' for cross validation """
+
+    X = np.array(X)
+    y = np.array(y)
+    param_options = [param_list for param_list in params.values()]
+    num_param_combinations = len(list(it.product(*param_options)))
+
+    counter = 0
+    optimal_loss = 999999999
+    optimal_params_combi = None
+    all_losses_for_single_param_combi = []
+
+    # iterate over all parameter combinations and find the optimal one (by cross-validation)
+    for param_combi_unnamed in it.product(*param_options):
+        start_time = time.time()        # start timer
+        counter += 1
+        param_combination = {}
+        for i, name in enumerate(params.keys()):
+            param_name = name
+            param_combination[param_name] = param_combi_unnamed[i]
+
+        param_combi_losses = []
+        for repetion in range(nrepetitions):
+            # divide x in nfolds random partitions of the same size
+            kf = KFold(n_splits=nfolds)
+            for train_ix, test_ix in kf.split(X):
+                # get the values and labels for training and testing
+                X_train, y_train = X[train_ix], y[train_ix]
+                X_test, y_test = X[test_ix], y[test_ix]
+
+                # train the model using the training data and get predictions about the test data
+                model = method(**param_combination)
+                model.fit(X_train, y_train)
+                if bias is None:
+                    y_pred = model.predict(X_test)
+                else:
+                    y_pred = model.predict(X_test, bias=bias)
+
+                # evaluate the predictions against the labels for the test data
+                loss = loss_function(y_true=y_test, y_pred=y_pred)
+                param_combi_losses.append(loss)
+                all_losses_for_single_param_combi.append(loss)
+
+        avg_loss = np.mean(param_combi_losses)
+        time_diff = time.time() - start_time
+        eta = time_diff * (num_param_combinations - counter)
+        print(f"{param_combination}: {avg_loss:.6f} ... completed {counter}/{num_param_combinations}  ETA: {eta:.1f}s")
+
+        if avg_loss < optimal_loss:
+            optimal_params_combi = param_combination
+            optimal_loss = avg_loss
+
+    # finally train model on optimal param combi
+    model = method(**optimal_params_combi)
+    model.cvloss = optimal_loss
+    if num_param_combinations == 1:
+        all_losses_for_single_param_combi = np.array(all_losses_for_single_param_combi)
+        model.cvloss = np.mean(all_losses_for_single_param_combi, axis = 0)
+    model.fit(X, y)
+
+    return model
+
+
+class krr:
+    def __init__(self, kernel='linear', kernelparameter=1, regularization=0):
+        self.kernel = kernel
+        self.kernelparameter = kernelparameter
+        self.regularization = regularization
+
+    def fit(self, X, y):
+        '''compute optimal KRR parameters alpha and bias from training set'''
+        n, d = X.shape
+        '''center data'''
+        self.mean = np.mean(X, axis = 0)
+        X = X - self.mean
+        self.X = X
+        K = kernelmatrix(X=X, kernelparameter=self.kernelparameter, kernel=self.kernel)
+        self.K = K
+        if self.regularization == 0:
+            self.regularization = one_out_crossval(data=X, labels=y, K=self.K)
+        inverse = scipy.linalg.inv(K + self.regularization * np.eye(n))
+        self.alpha = inverse @ y
+        '''calculate bias'''
+        biasarray = np.zeros(n)
+        for i in range(n):
+            biasarray[i] = kernelcalc(x = X[i], y = self.mean, kernel = self.kernel, kernelparameter = self.kernelparameter)
+        self.bias = np.dot(self.alpha, biasarray)
+
+    def predict(self, Xtest,bias = np.infty):
+        '''predict regression target on test set for given bias; if bias is not given, take bias calculated from training set'''
+        m,d = Xtest.shape
+        n = len(self.alpha)
+        kernelmat = np.zeros((m,n))
+        for i,x_i in enumerate(Xtest):
+            for j,x_j in enumerate(self.X):
+                kernelmat[i][j] = kernelcalc(x = x_i - self.mean,y = x_j, kernel = self.kernel,kernelparameter = self.kernelparameter)
+        self.variance = kernelmat @ self.alpha
+        if bias == np.infty:
+            return(self.variance + self.bias)
+        else:
+            return(self.variance + bias)
+
+
+
+
+def kernelmatrix(X, kernel, kernelparameter):
+    '''comute kernel matrix K for given kernel and data matrix X'''
+    n, d = X.shape
+    K = np.zeros((n, n))
+    for i, x in enumerate(X):
+        for j, y in enumerate(X):
+            K[i][j] = kernelcalc(x=x, y=y, kernel=kernel, kernelparameter=kernelparameter)
+    return (K)
+
+
+def kernelcalc(x, y, kernel, kernelparameter):
+    '''compute value of given kernel function k(x,y)'''
+    if kernel == 'linear':
+        return (np.dot(x, y))
+    elif kernel == 'polynomial':
+        return ((np.dot(x, y) + 1) ** kernelparameter)
+    elif kernel == 'gaussian':
+        a = (scipy.linalg.norm(x - y, ord=2) ** 2) / (2 * (kernelparameter ** 2))
+        return (np.exp(-a))
+    else:
+        raise Exception('kernel not implemented')
+
+
+def one_out_crossval(data, labels, K):
+    '''compute optimal regularization parameter out of candidates that are logarithmically scaled around mean of eigenvalues of kernel matrix K'''
+    eigvals = scipy.linalg.eigvals(data.T @ data)
+    mean = np.mean(eigvals)
+    candidates1 = mean + np.power(10,np.linspace(-7, 2, 9))
+    candidates2 = mean - np.power(10,np.linspace(-7, 2, 9))
+    candidates = np.concatenate([candidates1, candidates2[::-1]])
+    errors = np.zeros(len(candidates))
+    L, U = eig_decomp(K)
+    for index, candidate in enumerate(candidates):
+        error = one_out_err(labels=labels, C=candidate, L=L, U=U)
+        errors[index] = error
+    optindex = np.argmin(errors)
+    return candidates[optindex]
+
+
+def one_out_err(labels, C, L, U):
+    '''compute one_out_crossval error efficiently for given eigen-decomposition of K'''
+    diag = 1 / (L + C)
+    diagmat = np.diag(diag)
+    S = U @ L @ diagmat @ U.T
+    Sy = S @ labels
+    fraction = (labels - Sy) / (1 - diag)
+    return (np.average(fraction))
+
+
+def eig_decomp(A):
+    '''compute eigen decomposition of symmetric matrix A, i.e. A = U @ L @ U.T'''
+    eigvals, eigvecs = scipy.linalg.eigh(A)
+    L, U = np.diag(eigvals), eigvecs
+    return (L, U)
+
+
+##############################################################################
+
+
+class krr_application:
+    """ Class that is used to perform Assignment 4 """
+    def __init__(self, data_path):
+        self.data_path = data_path
+        self.data_dict = self._load_two()
+        #self.data_dict = self._load_data()
+        self.results_dict = {}
+        self.num_cv_repetitions = 1  # TODO: change this to 5
+        self.kernel_list = ['linear', 'polynomial', 'gaussian']
+        self.kernelparameter_list = [1,3,5,10]
+        self.regularization_list = np.power(10,np.linspace(-7,0,8))
+
+        # save the parameter options as dictionary
+        self.parameters_dict = {'kernel': self.kernel_list,
+                                'kernelparameter': self.kernelparameter_list,
+                                'regularization': self.regularization_list}
+
+    def _load_data(self):
+        """ Load the data from the data path, as a dictonary of dictionaries"""
+        data = {}
+        for testset in ['banana', 'diabetis', 'flare-solar', 'image', 'ringnorm']:
+            data[testset] = {}
+            for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
+                full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
+                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
+        return (data)
+    def _load_two(self):
+        data = {}
+        for testset in ['banana', 'diabetis']:
+            data[testset] = {}
+            for type in ['xtrain', 'xtest', 'ytrain', 'ytest']:
+                full_path = f'{self.data_path}/U04_{testset}-{type}.dat'
+                data[testset][type] = np.loadtxt(full_path).T  # transpose to have the correct shape
+        return (data)
+
+
+    def search_for_optimal_parameters(self, loss_function=zero_one_loss):
+        """
+        Function that actually searches for the parameters that yield the best performance
+
+        The loss function parameter can be set to mean_squared_error (function without brackets as arg) for 4d
+        """
+        for test_set in self.data_dict:
+            self.results_dict[test_set] = {}
+
+            # get the trainings data & labels
+            x_train, y_train = self.data_dict[test_set]['xtrain'], self.data_dict[test_set]['ytrain']
+
+            # perform cross validation over the general parameter options
+            print("Performing cross validation for test set:", test_set)
+            optimal_model = cv(X=x_train, y=y_train, method=krr, params=self.parameters_dict,
+                               loss_function=loss_function, nrepetitions=self.num_cv_repetitions, nfolds= 2)
+
+            # store the results in the results dictionary
+            self.results_dict[test_set]['cvloss'] = optimal_model.cvloss
+            self.results_dict[test_set]['kernel'] = optimal_model.kernel
+            self.results_dict[test_set]['kernelparameter'] = optimal_model.kernelparameter
+            self.results_dict[test_set]['regularization'] = optimal_model.regularization
+
+            # get the predictions from the test set
+            self.results_dict[test_set]['y_pred'] = optimal_model.predict(self.data_dict[test_set]['xtest'])
+
+        # finally, save results dict to file
+        with open(f'results.p', 'wb') as f:
+            pickle.dump(self.results_dict, f)
+
+    def plot_roc_curve(self, biases):
+        """
+        Function that takes a set of biases and calculates the TPR and FPR.
+        After this, the ROC curve is plotted by calling cv with the optimal parameters from results.
+
+        First optimal kernelparameter and regularization are calculated with cv, then cv with roc_fun as loss function
+        is used to compute average tpr and fpr for different biases
+        """
+        self.search_for_optimal_parameters()
+        fig, axes = plt.subplots(1,5, sharex= False, sharey= False,constrained_layout = True)
+        fig.set_size_inches(17, 10)
+        fig.suptitle('ROC Curves for Variation of Biases for all given Test Sets')
+        for index,testset in enumerate(self.data_dict):
+            axes[index].set_title(testset, y = -0.1)
+        #plt.show()
+        for index,testset in enumerate(self.data_dict):
+            rates = []
+            param_dict = {'kernel': [self.results_dict[testset]['kernel']], 'kernelparameter': [self.results_dict[testset]['kernelparameter']], 'regularization': [self.results_dict[testset]['regularization']]}
+            print('param_dict =', param_dict )
+            #param_dict = {'kernel': ['gaussian'],'kernelparameter': [1], 'regularization': [1]}
+            for bias in biases:
+                model = cv(X = self.data_dict[testset]['xtrain'], y = self.data_dict[testset]['ytrain'], method = krr, params = param_dict, loss_function = roc_fun, bias = bias, nfolds= 2)
+                rates.append(model.cvloss)
+            rates = np.array(rates)
+            x_i = rates[:][1]
+            y_i = rates[:][0]
+            axes[index].plot(x_i,y_i)
+            #plt.show()
+        plt.show()
+
+
+
+
+def roc_fun(y_true, y_pred):
+    """calculate tpr and fpr """
+    n = len(y_true)
+    total_positives = 0
+    true_positives = 0
+    total_negatives = 0
+    false_positives = 0
+    y_pred = np.sign(y_pred)
+    for i in range(n):
+        if y_true[i] == 1:
+            total_positives += 1
+            if y_pred[i] == 1:
+                true_positives += 1
+        elif y_true[i] == -1:
+            total_negatives += 1
+            if y_pred[i] == 1:
+                false_positives +=1
+    tpr = true_positives/total_positives
+    fpr = false_positives/total_negatives
+    return(np.array([tpr,fpr]))
+
+
+
+
+
+class assignment_3:
+    """ Class that is used to perform Assignment 3 """
+    def __init__(self, data_path="data/qm7.mat"):
+        self.data = sio.loadmat(data_path)
+        self.data_len = len(self.data['X'])
+        self.train_split = 5000
+
+        # get eigenvalues as basic data
+        self.eigenvalues_sums = None
+        self.eigenvalues = None
+        self._get_eigenvalues_from_data()
+
+        # fixed data
+        self.labels = self.data['T'].reshape(-1)
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+        self._fix_dataset()
+
+        # cross validation
+        self.regulization_params = np.logspace(-7, 0, 5)
+        self.width_quantiles = [0.01, 0.99]  # [0.01, 0.1, 0.5, 0.9, 0.99]
+        self.width_quantiles_values = None
+
+        # results
+        self.optimal_width_param = 685.4993774414061
+        self.optimal_regulization_param = 5.623413251903491e-06
+
+    def run(self):
+        """ Run the assignment """
+        self.plot_distances()
+
+    def _get_eigenvalues_from_data(self):
+        """ From the data (and there the list of matrices), get the eigenvectors """
+
+        eig_vals, eig_vals_sums = [], []
+        for matrix in np.real(self.data['X']):
+            eig_val = np.real(scipy.linalg.eigvals(matrix))
+            eig_val_sum = np.sum(eig_val)
+            eig_vals.append(eig_val)
+            eig_vals_sums.append(eig_val_sum)
+
+        # get the sorted indices of the eigenvalues
+        sorted_indices = np.argsort(eig_vals_sums).tolist()[::-1]
+
+        # sort the eigenvalues by the sorted indices
+        self.eigenvalues = [eig_vals[i] for i in sorted_indices]
+        self.eigenvalues_sums = [eig_vals_sums[i] for i in sorted_indices]
+
+    def _fix_dataset(self):
+        """ Shuffle the data, split it into training and test set 5000/2165 and fix it """
+
+        # get the shuffled indices
+        shuffled_indices = np.random.permutation(self.data_len)
+        train_indices = shuffled_indices[:self.train_split]
+        test_indices = shuffled_indices[self.train_split:]
+
+        # convert eigenvalues and labels to numpy arrays
+        self.eigenvalues = np.array(self.eigenvalues)
+        self.labels = np.array(self.labels)
+
+        # fix the data
+        self.X_train, self.y_train = self.eigenvalues[train_indices], self.labels[train_indices]
+        self.X_test, self.y_test = self.eigenvalues[test_indices], self.labels[test_indices]
+
+    def plot_distances(self):
+        """ Plot the distances between all pairs of eigenvectors, and their respective labels """
+
+        sums_x = []
+        sums_y = []
+        for i in range(self.data_len):
+            sums_x.append([self.eigenvalues_sums[i] - eigval_sum for eigval_sum in self.eigenvalues_sums])
+            sums_y.append([self.labels[i] - label for label in self.labels])
+
+        # plot the distances
+        plt.figure(figsize=(12, 12))
+        plt.scatter(sums_x, sums_y, s=1)
+        plt.show()
+
+    def apply_cv(self):
+        """
+        Apply cross validation on 2500 random training samples and fix them.
+        Also report the optimal parameters.
+
+        For:
+          - the width parameter of the gaussian kernel
+          - the regularization parameter (log between 10^-7 and 10^0)
+        """
+
+        # get the shuffled indices from the training set
+        shuffled_indices = np.random.permutation(self.train_split)[:2500]
+
+        X = self.X_train[shuffled_indices]
+        y = self.y_train[shuffled_indices]
+        X_sums = np.sum(X, axis=1)
+
+        # get quantiles of the eigenvalues_sums
+        self.width_quantiles_values = np.quantile(X_sums, self.width_quantiles, axis=0)
+        parameters = {'kernel': ['gaussian'],
+                      'kernelparameter': self.width_quantiles_values,
+                      'regularization': self.regulization_params}
+
+        # get the optimal width parameter by cross validation
+        optimal_model = cv(X=X, y=y, method=krr, params=parameters, nrepetitions=1, nfolds=5)
+        y_predict = optimal_model.predict(X)
+        error = mean_absolute_error(y, y_predict)
+
+        print(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.regularization}\n MAE: {error}")
+
+        # save results as txt
+        with open("results/apply_cv.txt", "w") as f:
+            f.write(f"Optimal parameter: {optimal_model.kernelparameter} - {optimal_model.regularization}\n MAE: {error}")
+
+        self.optimal_width_param = optimal_model.kernelparameter
+        self.optimal_regulization_param = optimal_model.regularization
+
+    def plot_mae(self, steps, load=False):
+        """ Plot the mean absolute error for the test set as a function of the number of training samples (n) """
+
+        kernelparameter = self.optimal_width_param
+        regularization = self.optimal_regulization_param
+        errors = []
+        numbers = np.linspace(100, 5000, steps)
+
+        if load is False:
+            for n in numbers:
+                n = int(n)
+                print("n:", n)
+                X = self.X_train[:n]
+                y = self.y_train[:n]
+                model = krr(kernel='gaussian', kernelparameter=kernelparameter, regularization=regularization)
+                model.fit(X, y)
+                y_pred = model.predict(self.X_test)
+                mae = mean_absolute_error(self.y_test, y_pred)
+                errors.append(mae)
+            # save errors as a txt file
+            with open('results/plot_mae.txt', 'w') as f:
+                for error in errors:
+                    f.write(str(error) + '\n')
+        else:
+            with open("results/plot_mae.txt", "r") as f:
+                for line in f:
+                    errors.append(float(line))
+
+        # plot the errors
+        plt.figure(figsize=(9, 9))
+        plt.plot(numbers, errors, 'o-')
+        plt.xlabel('Number of training samples')
+        plt.ylabel('MAE')
+
+        plt.show()
+
+    def plot_scatter(self):
+        """
+        Plot the scatter plot of points (y_i, ^y_i) with train and test data in two different colors
+
+        This is done for three different models that: underfit, fit well and overfit.
+        """
+
+        X = self.X_train[:1000]
+        y = self.y_train[:1000]
+
+        models = {}
+        models['underfit'] = krr(kernel='linear', kernelparameter=1, regularization=1e-7)
+        models['overfit'] = krr(kernel='linear', kernelparameter=100000, regularization=0)
+        models['fit'] = krr(kernel='gaussian',
+                            kernelparameter=self.optimal_width_param,
+                            regularization=self.optimal_regulization_param)
+
+        # create the data
+        predicts = {'underfit': {}, 'overfit': {}, 'fit': {}}
+
+        types = ['underfit', 'fit', 'overfit']
+        # iterate over the models and plot the predictions
+        for type in types:
+            models[type].fit(X, y)
+            predicts[type]['train'] = models[type].predict(self.X_train)
+            predicts[type]['test'] = models[type].predict(self.X_test)
+            plt.scatter(self.y_train, predicts[type]['train'], c='blue', label='train')
+            plt.scatter(self.y_test, predicts[type]['test'], c='red', label='test')
+            plt.show()
+
+
+
+
+if __name__ == '__main__':
+
+    # krr_application(data_path='data').search_for_optimal_parameters()
+
+    if False:
+        testbiases = np.linspace(0,2,20)
+        testobject = krr_application(data_path= 'data')
+        testobject.plot_roc_curve(biases = testbiases)
+    runner = assignment_3()
+    # runner.plot_mae(steps=10, load=True)
+    runner.plot_scatter()
+
