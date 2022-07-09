@@ -273,6 +273,7 @@ class assignment_4():
         print("Optimal parameters found", optimal_model.C, optimal_model.kernelparameter)
         plot_boundary_2d(self.X_test, self.y_test, optimal_model)
         print("DONE")
+        self.optimal_model = optimal_model
 
     def train_overfit_underfit(self):
         overfit_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1)
@@ -281,7 +282,9 @@ class assignment_4():
             model.fit(self.X_train, self.y_train)
             plot_boundary_2d(self.X_test, self.y_test, model)
 
-    def plot_roc
+    def plot_roc(self):
+        """ Plot ROC curve for varying bias parameter b of SVM """
+
 
 class assignment_5():
     def __init__(self, model = svm_qp):
@@ -295,10 +298,9 @@ class assignment_5():
         for clas in range(1,4):
             self.Y_mod = self.Y
             for i in range(n):
-
+                pass
 
 def Assignment_5():
-    data =
     X = data['X'].T
     Y = data['Y'].T
     model = svm_qp()
