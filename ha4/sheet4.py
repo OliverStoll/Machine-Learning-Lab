@@ -41,11 +41,12 @@ class svm_qp():
         n,d = X.shape
 
         K = buildKernel(X.T)
-
+        print(np.linalg.matrix_rank(K))
         one = np.ones(n)
         cee = np.full(n,fill_value=self.C)
         P = ((K * Y).T * Y).T
-        q = - one.reshape(n,1)
+        q = -one
+        #q = - one.reshape(n,1)
         G = np.concatenate([-np.eye(n),np.eye(n)], axis = 0)
         #G = np.eye(n)
         h = np.concatenate([np.zeros(n),cee], axis = 0)
@@ -66,12 +67,17 @@ class svm_qp():
         self.alpha_sv = alpha[indexes]
         self.X_sv = X[indexes]
         self.Y_sv = Y[indexes]
-        self.b = 0
+        '''calculate bias'''
+        m = len(self.alpha_sv)
+        self.K_sv = buildKernel(self.X_sv.T)
+        vector = self.alpha_sv * self.Y_sv
+        biases = self.Y_sv - self.K_sv @ vector
+        self.b = np.average(biases)
 
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T)
         vec = self.alpha_sv * self.Y_sv
-        return(K.T @ vec)
+        return(K.T @ vec - self.b)
 
 
 # This is already implemented for your convenience
