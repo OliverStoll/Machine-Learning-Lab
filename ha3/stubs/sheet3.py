@@ -1,7 +1,8 @@
 """ ps3_implementation.py
 
 PUT YOUR NAME HERE:
-<FIRST_NAME><LAST_NAME>
+Oliver Stoll
+Anton Hopmann
 
 
 Write the functions

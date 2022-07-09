@@ -42,19 +42,16 @@ class svm_qp():
     def fit(self, X, Y):
         n,d = X.shape
 
-        K = buildKernel(X.T)
+        K = buildKernel(X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+
         # print(np.linalg.matrix_rank(K))
         one = np.ones(n)
-        cee = np.full(n,fill_value=self.C)
+        cee = np.full(n, fill_value=self.C)
         P = ((K * Y).T * Y).T
         q = -one
-        #q = - one.reshape(n,1)
-        G = np.concatenate([-np.eye(n),np.eye(n)], axis = 0)
-        #G = np.eye(n)
-        h = np.concatenate([np.zeros(n),cee], axis = 0)
-        #h = cee.reshape(n,1)
-        #A = np.zeros(shape=(n,n)) + Y
-        A = Y.reshape(1,n) # hint: this has to be a row vector
+        G = np.concatenate([-np.eye(n), np.eye(n)], axis=0)
+        h = np.concatenate([np.zeros(n), cee], axis=0)
+        A = Y.reshape(1, n)  # hint: this has to be a row vector
         b = 0  # hint: this has to be a scalar
 
         # this is already implemented so you don't have to
@@ -73,13 +70,13 @@ class svm_qp():
         self.Y_sv = Y[indexes]
         '''calculate bias'''
         m = len(self.alpha_sv)
-        self.K_sv = buildKernel(self.X_sv.T)
+        self.K_sv = buildKernel(self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vector = self.alpha_sv * self.Y_sv
         biases = self.Y_sv - (self.K_sv @ vector).T
         self.b = np.average(biases)
 
     def predict(self, X):
-        K = buildKernel(self.X_sv.T,X.T)
+        K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
         return(K.T @ vec + self.b)
 
@@ -258,9 +255,7 @@ class neural_network(Module):
             plt.show()
 
 
-
 class assignment_4():
-
 
     def __init__(self):
         # load .npz data
@@ -272,13 +267,21 @@ class assignment_4():
     def find_optimal_parameters(self):
         # find optimal parameters for gaussian kernel
         params = {'kernel': ['gaussian'],
-                  'kernelparameter': np.logspace(-4, 4, 20),
-                  'C': np.logspace(-2, 2, 10)}
+                  'kernelparameter': np.linspace(2, 10, 5),
+                  'C': np.linspace(1, 10, 5)}
         optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
-        print("Optimal parameters found")
+        print("Optimal parameters found", optimal_model.C, optimal_model.kernelparameter)
+        plot_boundary_2d(self.X_test, self.y_test, optimal_model)
+        print("DONE")
 
     def train_overfit_underfit(self):
-        overfit_model = svm_qp()
+        overfit_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1)
+        underfit_model = svm_qp(kernel='gaussian', kernelparameter=1e-5, C=1)
+        for model in [overfit_model, underfit_model]:
+            model.fit(self.X_train, self.y_train)
+            plot_boundary_2d(self.X_test, self.y_test, model)
+
+    def plot_roc
 
 
 def Assignment_5():
@@ -292,11 +295,5 @@ def Assignment_5():
 
 
 if __name__ == '__main__':
-    #X = np.array([[0,1],[1,3],[5,1],[10,4]])
-    #y = np.array([1,1,-1,-1])
-    #model = svm_qp()
-    #model.fit(X = X, Y = y)
-    #model.predict(np.array([[0,1],[1,2]]))
-    #X_grid,y_grid = grid_eval(X = X, y = y,model = model, grid_density=100)
-    #plot_boundary_2d(X = X,y = y, model= model)
-    Assignment_5()
+    runner = assignment_4()
+    runner.find_optimal_parameters()
