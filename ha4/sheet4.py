@@ -45,10 +45,13 @@ class svm_qp():
         one = np.ones(n)
         cee = np.full(n,fill_value=self.C)
         P = ((K * Y).T * Y).T
-        q = - one
+        q = - one.reshape(n,1)
         G = np.concatenate([-np.eye(n),np.eye(n)], axis = 0)
+        #G = np.eye(n)
         h = np.concatenate([np.zeros(n),cee], axis = 0)
-        A = one.reshape(1,n) # hint: this has to be a row vector
+        #h = cee.reshape(n,1)
+        #A = np.zeros(shape=(n,n)) + Y
+        A = Y.reshape(1,n) # hint: this has to be a row vector
         b = 0  # hint: this has to be a scalar
 
         # this is already implemented so you don't have to
