@@ -22,9 +22,10 @@ from cvxopt import solvers
 from cvxopt import matrix as cvxmatrix
 import numpy as np
 import torch
+import time
 from torch.nn import Module, Parameter, ParameterList
 from torch.optim import SGD
-from sheet3 import cv
+import scipy.io as sio
 
 
 class svm_qp():
@@ -82,7 +83,7 @@ class svm_qp():
             self.b = 0
         '''test y_i f(x_i) = 1'''
         results_bias = self.predict(X_bias)
-        print('biastest=',Y_bias * results_bias)
+        # print('biastest=',Y_bias * results_bias)
         #print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
@@ -234,7 +235,7 @@ class neural_network(Module):
                 sum += ytrue[i, c] * torch.log(ypred[i, c])
         return -sum / ypred.shape[0]
 
-    def fit(self, X, y, nsteps=1000, bs=100, plot=False):
+    def fit(self, X, y, nsteps=100, bs=100, plot=False):
         X, y = torch.tensor(X), torch.tensor(y)
         optimizer = SGD(self.parameters(), lr=self.lr, weight_decay=self.lam)
 
@@ -264,6 +265,9 @@ class neural_network(Module):
             plt.plot(range(nsteps), Aval, label='Validation acc')
             plt.legend()
             plt.show()
+
+
+##############################################################################
 
 
 class Assignment_4():
@@ -322,8 +326,7 @@ class Assignment_4():
         plt.show()
 
 
-
-class assignment_5():
+class Assignment_5():
     def __init__(self, model = svm_qp):
         self.data_dict = dict(np.load('data/iris.npz'))
         self.X = data['X'].T
@@ -337,17 +340,154 @@ class assignment_5():
             for i in range(n):
                 pass
 
-def Assignment_5():
-    X = data['X'].T
-    Y = data['Y'].T
-    model = svm_qp()
-    model.fit(X,Y)
-    plot_boundary_2d(X,Y,model)
-    pass
+
+class Assignment_6():
+    def __init__(self):
+        # load matlab data
+        data = sio.loadmat('data/usps.mat')
+        self.X = data['data_patterns'].T
+        # reshape every vector in self.X to 16x16 img
+        self.X_2d = self.X.reshape(self.X.shape[0], 16, 16)
+        self.Y = data['data_labels'].T
+        # convert labels from one-hot to single int
+        self.Y_int = np.argmax(self.Y, axis=1)
+
+    def plot_25_images(self, labels):
+        plt.figure(figsize=(10, 10))
+        for i in range(25):
+            plt.subplot(5, 5, i + 1)
+            plt.imshow(self.X_2d[i], cmap='gray')
+            plt.title(labels[i])
+            plt.axis('off')
+        plt.show()
+
+
+    def svm_cross_validation(self):
+
+        # create log file
+        with open('svm_cross_validation.txt', 'w'):
+            pass
+
+        # iterate over all label classes 0-9
+        for label in range(10):
+            print('\nTESTING DIGIT:', label)
+            # set label to 1 if it is the current label, else -1 as integer
+            y = (self.Y_int == label).astype(int)
+            y[y == 0] = -1
+
+            # cross validation
+            params = {'kernel': ['linear', 'polynomial', 'gaussian'],
+                      'kernelparameter': np.linspace(1, 3, 3)}
+            optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1, nfolds=5)
+            predictions = optimal_model.predict(self.X)
+            predictions = np.sign(predictions)
+            self.plot_25_images(predictions)
+
+            # write and print logs
+            print("Optimal parameters found [kernel, kernel_param]", optimal_model.kernel, optimal_model.kernelparameter,)
+            print("Test Error:", optimal_model.cvloss)
+            with open('svm_cross_validation.txt', 'a') as f:
+                f.write(f"{label} {optimal_model.kernel} {optimal_model.kernelparameter} {optimal_model.cvloss}\n")
+
+    def nn_cross_validation(self):
+
+        # create log file
+        with open('nn_cross_validation.txt', 'w'):
+            pass
+
+        params = {'layers': [[256, 10]],
+                  'p': np.linspace(0.1, 0.5, 3),
+                  'lam': np.logspace(-3, -1, 3),
+                  'lr': np.logspace(-3, -1, 3)}
+        optimal_model = cv(X=self.X, y=self.Y, method=neural_network, loss_function=zero_one_loss, params=params, nrepetitions=1, nfolds=5)
+        print("Optimal parameters found [layers, p, lam, lr]", len(optimal_model.weights), optimal_model.p, optimal_model.lam, optimal_model.lr)
+        print("Test Error:", optimal_model.cvloss)
+        with open('nn_cross_validation.txt', 'a') as f:
+            f.write(f"{optimal_model.weights} {optimal_model.p} {optimal_model.lam} {optimal_model.lr} {optimal_model.cvloss}\n")
+
+    def plot_support_vectors(self):
+        """ For every class (digit), plot the support vectors of nn and svm """
+        pass
+
+    def plot_nn_weight_vectors(self):
+        """ Plot 100 weight vectors of the first layer of the neural net (grayscale) """
+
+
+def zero_one_loss(y_true, y_pred):
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+    output = np.sum(y_true != np.sign(y_pred))
+    total = len(y_true)
+    return output / total
+
+
+def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None):
+    from sklearn.model_selection import KFold
+    import itertools as it
+    """ Creates a class 'method' for cross validation """
+
+    X = np.array(X)
+    y = np.array(y)
+    param_options = [param_list for param_list in params.values()]
+    num_param_combinations = len(list(it.product(*param_options)))
+
+    counter = 0
+    optimal_loss = 999999999
+    optimal_params_combi = None
+    all_losses_for_single_param_combi = []
+
+    # iterate over all parameter combinations and find the optimal one (by cross-validation)
+    for param_combi_unnamed in it.product(*param_options):
+        start_time = time.time()  # start timer
+        counter += 1
+        param_combination = {}
+        for i, name in enumerate(params.keys()):
+            param_name = name
+            param_combination[param_name] = param_combi_unnamed[i]
+
+        param_combi_losses = []
+        for repetion in range(nrepetitions):
+            # divide x in nfolds random partitions of the same size
+            kf = KFold(n_splits=nfolds)
+            for train_ix, test_ix in kf.split(X):
+                # get the values and labels for training and testing
+                X_train, y_train = X[train_ix], y[train_ix]
+                X_test, y_test = X[test_ix], y[test_ix]
+
+                # train the model using the training data and get predictions about the test data
+                model = method(**param_combination)
+                model.fit(X_train, y_train)
+                if bias is None:
+                    y_pred = model.predict(X_test)
+                else:
+                    y_pred = model.predict(X_test, bias=bias)
+
+                # evaluate the predictions against the labels for the test data
+                loss = loss_function(y_true=y_test, y_pred=y_pred)
+                param_combi_losses.append(loss)
+                all_losses_for_single_param_combi.append(loss)
+
+        avg_loss = np.mean(param_combi_losses)
+        time_diff = time.time() - start_time
+        eta = time_diff * (num_param_combinations - counter)
+        print(f"{param_combination}: {avg_loss:.6f} ... completed {counter}/{num_param_combinations}  ETA: {eta:.1f}s")
+
+        if avg_loss < optimal_loss:
+            optimal_params_combi = param_combination
+            optimal_loss = avg_loss
+
+    # finally train model on optimal param combi
+    model = method(**optimal_params_combi)
+    model.cvloss = optimal_loss
+    if num_param_combinations == 1:
+        all_losses_for_single_param_combi = np.array(all_losses_for_single_param_combi)
+        model.cvloss = np.mean(all_losses_for_single_param_combi, axis=0)
+    model.fit(X, y)
+
+    return model
 
 
 if __name__ == '__main__':
-    runner = Assignment_4()
-    # runner.find_optimal_parameters()
-    # runner.train_overfit_underfit()
-    runner.plot_roc()
+    runner = Assignment_6()
+    neural_network = neural_network()
+    # runner.svm_cross_validation()
+    runner.nn_cross_validation()
