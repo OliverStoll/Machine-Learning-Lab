@@ -31,7 +31,7 @@ import scipy
 
 def zero_one_loss(y_true, y_pred):
     ''' Loss function that calculates percentage of correctly predicted signs'''
-    return np.average(y_true == np.sign(y_pred))
+    return np.sum(y_true != np.sign(y_pred)) / len(y_true)
 
 
 def mean_squared_error(y_true, y_pred):

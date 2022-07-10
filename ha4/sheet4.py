@@ -22,9 +22,11 @@ from cvxopt import solvers
 from cvxopt import matrix as cvxmatrix
 import numpy as np
 import torch
+import time
 from torch.nn import Module, Parameter, ParameterList
 from torch.optim import SGD
-from sheet3 import cv
+import scipy.io as sio
+from copy import deepcopy
 
 
 class svm_qp():
@@ -40,7 +42,7 @@ class svm_qp():
         self.Y_sv = None
 
     def fit(self, X, Y):
-        n,d = X.shape
+        n, d = X.shape
 
         K = buildKernel(X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
 
@@ -95,10 +97,11 @@ class svm_qp():
         '''test y_i f(x_i) = 1'''
         #print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
-        K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+        K = buildKernel(self.X_sv.T, X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
         prebias = K.T @ vec
         return prebias - self.b
+
 
 # This is already implemented for your convenience
 class svm_sklearn():
@@ -162,8 +165,8 @@ def plot_boundary_2d(X, Y, model,title = 'whatever'):
     x, y = np.meshgrid(xvals, yvals)
     points = np.array([x.flatten(), y.flatten()]).T
     predictions = model.predict(points)
-    n = grid_density**2
-    if len(predictions.shape) ==2:
+    n = grid_density ** 2
+    if len(predictions.shape) == 2:
         targets = np.zeros(n)
         maxima = np.max(predictions,axis=1)
         for i in range(n):
@@ -174,11 +177,11 @@ def plot_boundary_2d(X, Y, model,title = 'whatever'):
     else:
         targets = np.sign(predictions)
 
-    ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
-    ax.set_xlim([xmin ,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.contourf(x, y, targets.reshape(x.shape), levels=0, alpha=.3)
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     plt.title(f'{title}')
-    ax.legend(loc = 'upper left')
+    ax.legend(loc='upper left')
     plt.show()
 
 
@@ -211,7 +214,7 @@ def buildKernel(X, Y=False, kernel='linear', kernelparameter=0):
 
 
 class neural_network(Module):
-    def __init__(self, layers=[2, 100, 2], scale=.1, p=None, lr=None, lam=None):
+    def __init__(self, layers=[2, 100, 2], scale=.1, p=.1, lr=.1, lam=.1):
         super().__init__()
         self.weights = ParameterList([Parameter(scale * torch.randn(m, n)) for m, n in zip(layers[:-1], layers[1:])])
         self.biases = ParameterList([Parameter(scale * torch.randn(n)) for n in layers[1:]])
@@ -319,7 +322,7 @@ class Assignment_4():
         underfit_model = svm_qp(kernel='gaussian', kernelparameter=0.1, C=0.001)
         for model in [overfit_model, underfit_model]:
             model.fit(self.X_train, self.y_train)
-            plot_boundary_2d(self.X_test, self.y_test, model, title = f'{model}')
+            plot_boundary_2d(self.X_test, self.y_test, model, title=f'{model}')
 
     def plot_roc(self):
         """ Plot ROC curve for varying bias parameter b of SVM """
@@ -348,9 +351,8 @@ class Assignment_4():
         plt.show()
 
 
-
-class assignment_5():
-    def __init__(self, model = svm_qp):
+class Assignment_5():
+    def __init__(self, model=svm_qp):
         self.data_dict = dict(np.load('data/iris.npz'))
         self.X = self.data_dict['X'].T
         self.Y = self.data_dict['Y'].T
@@ -369,11 +371,218 @@ class assignment_5():
         print(self.loss)
 
 
+class Assignment_6():
+    def __init__(self):
+        # load matlab data
+        data = sio.loadmat('data/usps.mat')
+        self.X = data['data_patterns'].T
+        # reshape every vector in self.X to 16x16 img
+        self.X_2d = self.X.reshape(self.X.shape[0], 16, 16)
+        self.Y = data['data_labels'].T
+        self.Y_zero_one = deepcopy(self.Y)
+        self.Y_zero_one[self.Y == -1] = 0
+        # convert labels from one-hot to single int
+        self.Y_int = np.argmax(self.Y, axis=1)
+        self.p = 0.1
+        self.lr = 0.02
+        self.lam = 0.01
+
+
+    def plot_25_images(self, labels, labels_true=None):
+        plt.figure(figsize=(10, 10))
+        for i in range(25):
+            plt.subplot(5, 5, i + 1)
+            plt.imshow(self.X_2d[i], cmap='gray')
+            plt.title(labels[i], color='red' if labels_true is not None and labels_true[i] == labels[i] else 'black')
+            plt.axis('off')
+        plt.show()
+
+    def svm_cross_validation(self):
+
+        # create log file
+        with open('svm_cross_validation.txt', 'w'):
+            pass
+
+        # iterate over all label classes 0-9
+        for label in range(10):
+            print('\nTESTING DIGIT:', label)
+            # set label to 1 if it is the current label, else -1 as integer
+            y = (self.Y_int == label).astype(int)
+            y[y == 0] = -1
+
+            # cross validation
+            params = {'kernel': ['linear', 'polynomial', 'gaussian'],
+                      'kernelparameter': np.linspace(1, 3, 3)}
+            optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1,
+                               nfolds=5)
+            predictions = optimal_model.predict(self.X)
+            predictions = np.sign(predictions)
+            self.plot_25_images(predictions, labels_true=self.Y_int)
+
+            # write and print logs
+            print("Optimal parameters found [kernel, kernel_param]", optimal_model.kernel,
+                  optimal_model.kernelparameter, )
+            print("Test Error:", optimal_model.cvloss)
+            with open('svm_cross_validation.txt', 'a') as f:
+                f.write(f"{label} {optimal_model.kernel} {optimal_model.kernelparameter} {optimal_model.cvloss}\n")
+
+    def nn_cross_validation(self, nsteps=1000, n_params=4):
+
+        # create log file
+        with open('nn_cross_validation.txt', 'w'):
+            pass
+
+        params = {'layers': [[256, 100, 10]],
+                  'p': np.linspace(0.1, 0.3, n_params),
+                  'lam': np.logspace(-3, -0.5, n_params),
+                  'lr': np.logspace(-3, -0.5, n_params)}
+
+        optimal_model = cv(X=self.X, y=self.Y_zero_one, method=neural_network, loss_function=nn_zero_one_loss,
+                           params=params, nrepetitions=1, nfolds=5, nsteps=nsteps)
+
+        print("Optimal parameters found [layers, p, lam, lr]", len(optimal_model.weights), optimal_model.p,
+              optimal_model.lam, optimal_model.lr)
+        print("Test Error:", optimal_model.cvloss)
+        self.optimal_model = optimal_model
+        with open('nn_cross_validation.txt', 'a') as f:
+            f.write(
+                f"{optimal_model.weights} {optimal_model.p} {optimal_model.lam} {optimal_model.lr} {optimal_model.cvloss}\n")
+
+
+    def plot_support_vectors(self):
+        """ For every class (digit), plot the support vectors of nn and svm """
+        pass
+
+    def plot_nn_weight_vectors(self):
+        """ Plot 100 weight vectors of the first layer of the neural net (grayscale) """
+
+        for nsteps in [5, 50, 250]:
+            model = neural_network(layers=[256, 100, 10], p=self.p, lr=self.lr, lam=self.lam)
+            model.fit(X=self.X, y=self.Y_zero_one, nsteps=nsteps, plot=True)
+            weights = model.weights[0].detach().numpy()
+            weights = weights.reshape(-1, 10, 10)
+            plt.figure(figsize=(10, 10))
+            dim = 10
+            for i in range(dim * dim):
+                plt.subplot(dim, dim, i + 1)
+                # imshow from -1 to 1
+                plt.imshow(weights[i], cmap='gray', vmin=-1, vmax=1)
+                plt.axis('off')
+            plt.suptitle(f"First Layer weights fitted with nsteps={nsteps}")
+            plt.show()
+
+        for lam in [0.01, 0.1, 1]:
+            model = neural_network(layers=[256, 100, 10], p=self.p, lr=self.lr, lam=lam)
+            model.fit(X=self.X, y=self.Y_zero_one, nsteps=250)
+            weights = model.weights[0].detach().numpy()
+            weights = weights.reshape(-1, 10, 10)
+            plt.figure(figsize=(10, 10))
+            dim = 10
+            for i in range(dim*dim):
+                plt.subplot(dim, dim, i + 1)
+                plt.imshow(weights[i], cmap='gray', vmin=-1, vmax=1)
+                plt.axis('off')
+            plt.suptitle(f"First Layer weights fitted with lam={lam}")
+            plt.show()
+
+
+def zero_one_loss(y_true, y_pred):
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+    output = np.sum(y_true != np.sign(y_pred))
+    total = len(y_true)
+    return output / total
+
+
+def nn_zero_one_loss(y_true, y_pred):
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+
+    # get the index of the largest value in y_pred
+    y_pred_index = np.argmax(y_pred, axis=1)
+    # get the index of the largest value in y_true
+    y_true_index = np.argmax(y_true, axis=1)
+    output = np.sum(y_true_index != y_pred_index)
+    total = len(y_true)
+    return output / total
+
+
+def nn_loss(y_pred, y_true):
+    # implement cross entropy loss
+    assert y_pred.shape == y_true.shape
+    sum = 0
+    for i in range(y_pred.shape[0]):
+        for c in range(y_pred.shape[1]):
+            sum += y_true[i, c] * np.log(y_pred[i, c])
+    return -sum / y_pred.shape[0]
+
+
+def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None, nsteps=1000):
+    from sklearn.model_selection import KFold
+    import itertools as it
+    """ Creates a class 'method' for cross validation """
+
+    X = np.array(X)
+    y = np.array(y)
+    param_options = [param_list for param_list in params.values()]
+    num_param_combinations = len(list(it.product(*param_options)))
+
+    counter = 0
+    optimal_loss = 999999999
+    optimal_params_combi = None
+    all_losses_for_single_param_combi = []
+
+    # iterate over all parameter combinations and find the optimal one (by cross-validation)
+    for param_combi_unnamed in it.product(*param_options):
+        start_time = time.time()  # start timer
+        counter += 1
+        param_combination = {}
+        for i, name in enumerate(params.keys()):
+            param_name = name
+            param_combination[param_name] = param_combi_unnamed[i]
+
+        param_combi_losses = []
+        for repetion in range(nrepetitions):
+            # divide x in nfolds random partitions of the same size
+            kf = KFold(n_splits=nfolds)
+            for train_ix, test_ix in kf.split(X):
+                # get the values and labels for training and testing
+                X_train, y_train = X[train_ix], y[train_ix]
+                X_test, y_test = X[test_ix], y[test_ix]
+
+                # train the model using the training data and get predictions about the test data
+                model = method(**param_combination)
+                model.fit(X_train, y_train, nsteps=nsteps)
+                if bias is None:
+                    y_pred = model.predict(X_test)
+                else:
+                    y_pred = model.predict(X_test, bias=bias)
+
+                # evaluate the predictions against the labels for the test data
+                loss = loss_function(y_true=y_test, y_pred=y_pred)
+                param_combi_losses.append(loss)
+                all_losses_for_single_param_combi.append(loss)
+
+        avg_loss = np.mean(param_combi_losses)
+        time_diff = time.time() - start_time
+        eta = time_diff * (num_param_combinations - counter)
+        print(f"{param_combination}: {avg_loss:.6f} ... completed {counter}/{num_param_combinations}  ETA: {eta:.1f}s")
+
+        if avg_loss < optimal_loss:
+            optimal_params_combi = param_combination
+            optimal_loss = avg_loss
+
+    # finally train model on optimal param combi
+    model = method(**optimal_params_combi)
+    model.cvloss = optimal_loss
+    if num_param_combinations == 1:
+        all_losses_for_single_param_combi = np.array(all_losses_for_single_param_combi)
+        model.cvloss = np.mean(all_losses_for_single_param_combi, axis=0)
+    model.fit(X, y)
+
+    return model
+
 
 if __name__ == '__main__':
-    runner = Assignment_4()
-    # runner.find_optimal_parameters()
-    # runner.train_overfit_underfit()
-    #runner.plot_roc()
-    runner = assignment_5(svm_qp)
-    runner.lin_test()
+    runner = Assignment_6()
+    # runner.svm_cross_validation()
+    # runner.nn_cross_validation(nsteps=100, n_params=1)
+    runner.plot_nn_weight_vectors()
