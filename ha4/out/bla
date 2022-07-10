@@ -1,0 +1,414 @@
+0 gaussian 6.0 0.010458927308594188
+1 gaussian 3.0 0.0054825622510886966
+2 gaussian 5.0 0.019429039341943646
+3 gaussian 5.0 0.015447699160060049
+4 gaussian 6.0 0.017947668143075145
+5 polynomial 2.0 0.018438977183905907
+6 gaussian 6.0 0.0069713775263334195
+7 polynomial 2.0 0.010958921105197205
+8 gaussian 5.0 0.01743774891130383
+9 gaussian 5.0 0.01493902060768477
+
+
+C:\DRIVE\SOFTWARE\_Archiv\_global-venv-pc1\Scripts\python.exe C:/DRIVE/SOFTWARE/MLL/ha4/sheet4.py
+
+TESTING DIGIT: 0
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.022418 ... completed 1/18  ETA: 134.6s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.022418 ... completed 2/18  ETA: 126.4s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.022418 ... completed 3/18  ETA: 199.8s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.022418 ... completed 4/18  ETA: 188.2s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.022418 ... completed 5/18  ETA: 173.7s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.022418 ... completed 6/18  ETA: 161.0s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.022418 ... completed 7/18  ETA: 147.8s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.011458 ... completed 8/18  ETA: 135.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 124.8s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 87.0s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 63.4s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 49.0s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.178836 ... completed 13/18  ETA: 47.8s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.103113 ... completed 14/18  ETA: 47.2s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.021418 ... completed 15/18  ETA: 39.3s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.011954 ... completed 16/18  ETA: 22.5s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.010956 ... completed 17/18  ETA: 11.1s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.010459 ... completed 18/18  ETA: 0.0s
+Digit 0 & gaussian & 6.0 & 0.010458927308594188 \\
+
+TESTING DIGIT: 1
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.011960 ... completed 1/18  ETA: 269.9s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.011960 ... completed 2/18  ETA: 254.1s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.011960 ... completed 3/18  ETA: 239.5s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.011960 ... completed 4/18  ETA: 224.8s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.011960 ... completed 5/18  ETA: 206.8s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.011960 ... completed 6/18  ETA: 192.1s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.011960 ... completed 7/18  ETA: 176.1s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.005976 ... completed 8/18  ETA: 130.1s
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 0.894395 ... completed 9/18  ETA: 125.2s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 98.4s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 69.0s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 49.0s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.027400 ... completed 13/18  ETA: 47.6s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.008970 ... completed 14/18  ETA: 47.0s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.005483 ... completed 15/18  ETA: 40.2s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.005483 ... completed 16/18  ETA: 28.0s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.005980 ... completed 17/18  ETA: 14.0s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.006479 ... completed 18/18  ETA: 0.0s
+Digit 1 & gaussian & 3.0 & 0.0054825622510886966 \\
+
+TESTING DIGIT: 2
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.035374 ... completed 1/18  ETA: 226.7s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.035374 ... completed 2/18  ETA: 210.8s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.035374 ... completed 3/18  ETA: 198.7s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.035374 ... completed 4/18  ETA: 185.7s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.035374 ... completed 5/18  ETA: 171.7s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.035374 ... completed 6/18  ETA: 158.9s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.035374 ... completed 7/18  ETA: 145.2s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.020430 ... completed 8/18  ETA: 138.2s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 120.3s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 87.2s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 63.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 44.1s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.098646 ... completed 13/18  ETA: 47.5s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.097151 ... completed 14/18  ETA: 46.9s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.044333 ... completed 15/18  ETA: 35.2s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.020920 ... completed 16/18  ETA: 22.3s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.019429 ... completed 17/18  ETA: 11.7s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.020427 ... completed 18/18  ETA: 0.0s
+Digit 2 & gaussian & 5.0 & 0.019429039341943646 \\
+
+TESTING DIGIT: 3
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.032390 ... completed 1/18  ETA: 217.7s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.032390 ... completed 2/18  ETA: 204.4s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.032390 ... completed 3/18  ETA: 192.3s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.032390 ... completed 4/18  ETA: 179.8s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.032390 ... completed 5/18  ETA: 167.5s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.032390 ... completed 6/18  ETA: 153.9s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.032390 ... completed 7/18  ETA: 142.6s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.018943 ... completed 8/18  ETA: 140.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 124.6s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 88.4s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 63.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 47.8s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.082717 ... completed 13/18  ETA: 47.9s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.079229 ... completed 14/18  ETA: 48.6s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.031895 ... completed 15/18  ETA: 38.1s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.018438 ... completed 16/18  ETA: 24.1s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.015448 ... completed 17/18  ETA: 11.5s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.016444 ... completed 18/18  ETA: 0.0s
+Digit 3 & gaussian & 5.0 & 0.015447699160060049 \\
+
+TESTING DIGIT: 4
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.032894 ... completed 1/18  ETA: 247.9s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.032894 ... completed 2/18  ETA: 229.8s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.032894 ... completed 3/18  ETA: 213.5s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.032894 ... completed 4/18  ETA: 204.3s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.032894 ... completed 5/18  ETA: 185.8s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.032894 ... completed 6/18  ETA: 172.8s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.032894 ... completed 7/18  ETA: 158.0s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.023927 ... completed 8/18  ETA: 145.6s
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 0.310071 ... completed 9/18  ETA: 139.7s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 101.1s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 71.0s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 49.1s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.099661 ... completed 13/18  ETA: 51.8s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.083221 ... completed 14/18  ETA: 50.6s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.037878 ... completed 15/18  ETA: 37.6s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.021438 ... completed 16/18  ETA: 25.5s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.018446 ... completed 17/18  ETA: 12.8s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.017948 ... completed 18/18  ETA: 0.0s
+Digit 4 & gaussian & 6.0 & 0.017947668143075145 \\
+
+TESTING DIGIT: 5
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.030397 ... completed 1/18  ETA: 230.7s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.030397 ... completed 2/18  ETA: 216.1s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.030397 ... completed 3/18  ETA: 203.5s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.030397 ... completed 4/18  ETA: 189.9s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.030397 ... completed 5/18  ETA: 176.0s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.030397 ... completed 6/18  ETA: 163.1s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.030397 ... completed 7/18  ETA: 150.0s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.018439 ... completed 8/18  ETA: 137.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 128.3s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 88.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 65.8s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 47.0s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.079747 ... completed 13/18  ETA: 48.6s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.079747 ... completed 14/18  ETA: 47.8s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.047849 ... completed 15/18  ETA: 36.2s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.024920 ... completed 16/18  ETA: 22.6s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.019934 ... completed 17/18  ETA: 11.3s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.021927 ... completed 18/18  ETA: 0.0s
+Digit 5 & polynomial & 2.0 & 0.018438977183905907 \\
+
+TESTING DIGIT: 6
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.014448 ... completed 1/18  ETA: 237.0s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.014448 ... completed 2/18  ETA: 222.9s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.014448 ... completed 3/18  ETA: 208.8s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.014448 ... completed 4/18  ETA: 194.6s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.014448 ... completed 5/18  ETA: 181.9s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.014448 ... completed 6/18  ETA: 166.3s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.014448 ... completed 7/18  ETA: 153.1s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.010961 ... completed 8/18  ETA: 135.6s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 122.8s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 89.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 63.8s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 47.8s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.084689 ... completed 13/18  ETA: 48.4s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.047313 ... completed 14/18  ETA: 50.3s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.019923 ... completed 15/18  ETA: 34.3s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.009959 ... completed 16/18  ETA: 21.9s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.007469 ... completed 17/18  ETA: 11.0s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.006971 ... completed 18/18  ETA: 0.0s
+Digit 6 & gaussian & 6.0 & 0.0069713775263334195 \\
+
+TESTING DIGIT: 7
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.017435 ... completed 1/18  ETA: 246.8s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.017435 ... completed 2/18  ETA: 231.0s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.017435 ... completed 3/18  ETA: 217.1s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.017435 ... completed 4/18  ETA: 202.7s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.017435 ... completed 5/18  ETA: 187.6s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.017435 ... completed 6/18  ETA: 174.6s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.017435 ... completed 7/18  ETA: 159.7s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.010959 ... completed 8/18  ETA: 135.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 130.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 94.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 67.6s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 48.9s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.073255 ... completed 13/18  ETA: 48.7s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.034888 ... completed 14/18  ETA: 49.1s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.016446 ... completed 15/18  ETA: 34.9s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.012458 ... completed 16/18  ETA: 24.7s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.010963 ... completed 17/18  ETA: 12.4s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.010964 ... completed 18/18  ETA: 0.0s
+Digit 7 & polynomial & 2.0 & 0.010958921105197205 \\
+
+TESTING DIGIT: 8
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.044343 ... completed 1/18  ETA: 208.9s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.044343 ... completed 2/18  ETA: 198.1s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.044343 ... completed 3/18  ETA: 184.9s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.044343 ... completed 4/18  ETA: 171.8s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.044343 ... completed 5/18  ETA: 160.5s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.044343 ... completed 6/18  ETA: 147.4s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.044343 ... completed 7/18  ETA: 135.3s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.018439 ... completed 8/18  ETA: 134.5s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 1.000000 ... completed 9/18  ETA: 127.0s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 90.0s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 69.7s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 49.5s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.082711 ... completed 13/18  ETA: 48.5s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.074239 ... completed 14/18  ETA: 47.1s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.037368 ... completed 15/18  ETA: 34.5s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.018933 ... completed 16/18  ETA: 24.1s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.017438 ... completed 17/18  ETA: 11.3s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.018933 ... completed 18/18  ETA: 0.0s
+Digit 8 & gaussian & 5.0 & 0.01743774891130383 \\
+
+TESTING DIGIT: 9
+{'kernel': 'linear', 'kernelparameter': 1.0}: 0.028894 ... completed 1/18  ETA: 218.9s
+{'kernel': 'linear', 'kernelparameter': 2.0}: 0.028894 ... completed 2/18  ETA: 206.7s
+{'kernel': 'linear', 'kernelparameter': 3.0}: 0.028894 ... completed 3/18  ETA: 191.9s
+{'kernel': 'linear', 'kernelparameter': 4.0}: 0.028894 ... completed 4/18  ETA: 179.9s
+{'kernel': 'linear', 'kernelparameter': 5.0}: 0.028894 ... completed 5/18  ETA: 167.0s
+{'kernel': 'linear', 'kernelparameter': 6.0}: 0.028894 ... completed 6/18  ETA: 153.9s
+{'kernel': 'polynomial', 'kernelparameter': 1.0}: 0.028894 ... completed 7/18  ETA: 142.1s
+{'kernel': 'polynomial', 'kernelparameter': 2.0}: 0.020923 ... completed 8/18  ETA: 142.9s
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 3.0}: 0.465282 ... completed 9/18  ETA: 135.1s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 4.0}: 1.000000 ... completed 10/18  ETA: 94.7s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 5.0}: 1.000000 ... completed 11/18  ETA: 69.9s
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+no support vectors
+{'kernel': 'polynomial', 'kernelparameter': 6.0}: 1.000000 ... completed 12/18  ETA: 49.2s
+{'kernel': 'gaussian', 'kernelparameter': 1.0}: 0.088199 ... completed 13/18  ETA: 48.1s
+{'kernel': 'gaussian', 'kernelparameter': 2.0}: 0.034879 ... completed 14/18  ETA: 46.2s
+{'kernel': 'gaussian', 'kernelparameter': 3.0}: 0.015939 ... completed 15/18  ETA: 39.4s
+{'kernel': 'gaussian', 'kernelparameter': 4.0}: 0.015440 ... completed 16/18  ETA: 24.3s
+{'kernel': 'gaussian', 'kernelparameter': 5.0}: 0.014939 ... completed 17/18  ETA: 12.3s
+{'kernel': 'gaussian', 'kernelparameter': 6.0}: 0.015438 ... completed 18/18  ETA: 0.0s
+Digit 9 & gaussian & 5.0 & 0.01493902060768477 \\
+
+Process finished with exit code 0

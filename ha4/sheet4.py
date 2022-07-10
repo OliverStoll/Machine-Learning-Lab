@@ -437,7 +437,7 @@ class Assignment_6():
 
             # cross validation
             params = {'kernel': ['linear', 'polynomial', 'gaussian'],
-                      'kernelparameter': np.linspace(1, 3, 3)}
+                      'kernelparameter': np.linspace(1, 10, 10)}
             optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1,
                                nfolds=5)
             predictions = optimal_model.predict(self.X)
@@ -445,9 +445,7 @@ class Assignment_6():
             self.plot_25_images(predictions, labels_true=self.Y_int)
 
             # write and print logs
-            print("Optimal parameters found [kernel, kernel_param]", optimal_model.kernel,
-                  optimal_model.kernelparameter, )
-            print("Test Error:", optimal_model.cvloss)
+            print(f"Digit {label} & {optimal_model.kernel} & {optimal_model.kernelparameter} & {optimal_model.cvloss} \\\\")
             with open('svm_cross_validation.txt', 'a') as f:
                 f.write(f"{label} {optimal_model.kernel} {optimal_model.kernelparameter} {optimal_model.cvloss}\n")
 
@@ -475,7 +473,51 @@ class Assignment_6():
 
     def plot_support_vectors(self):
         """ For every class (digit), plot the support vectors of nn and svm """
-        pass
+        
+        parameter = {
+              "0": "gaussian 7.0 0.009462",
+              "1": "gaussian 3.0 0.005482",
+              "2": "gaussian 5.0 0.019429",
+              "3": "gaussian 5.0 0.015447",
+              "4": "gaussian 6.0 0.017947",
+              "5": "polynomial 2.0 0.0184389",
+              "6": "gaussian 6.0 0.006971",
+              "7": "polynomial 2.0 0.010958",
+              "8": "gaussian 5.0 0.017437",
+              "9": "gaussian 5.0 0.014939"
+        }
+        plt.figure(figsize=(12, 12))
+        for label in range(10):
+            print('\nTESTING DIGIT:', label)
+            # set label to 1 if it is the current label, else -1 as integer
+            y = (self.Y_int == label).astype(int)
+            y[y == 0] = -1
+
+            # cross validation
+            entry = parameter[str(label)].split(" ")
+            params = {'kernel': [entry[0]],
+                      'kernelparameter': [float(entry[1])]}
+            optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1,
+                               nfolds=5)
+
+            # extract support vectors
+            support_vectors = optimal_model.X_sv
+
+            true_support_vectors = support_vectors[optimal_model.Y_sv == 1]
+            false_support_vectors = support_vectors[optimal_model.Y_sv == -1]
+
+            true_support_vectors_2d = true_support_vectors.reshape(true_support_vectors.shape[0], 16, 16)
+            false_support_vectors_2d = false_support_vectors.reshape(false_support_vectors.shape[0], 16, 16)
+
+            # plot support vectors
+            for i in range(5):
+                plt.subplot(10, 10, i + 1 + 10 * label)
+                plt.imshow(true_support_vectors_2d[i], cmap='gray')
+                plt.axis('off')
+                plt.subplot(10, 10, i + 1 + 5 + 10 * label)
+                plt.imshow(false_support_vectors_2d[i], cmap='gray')
+                plt.axis('off')
+        plt.show()
 
     def plot_nn_weight_vectors(self):
         """ Plot 100 weight vectors of the first layer of the neural net (grayscale) """
@@ -615,13 +657,9 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 
 if __name__ == '__main__':
-    if False:
-        runner = Assignment_6()
-        runner.svm_cross_validation()
-    runner = Assignment_4()
-    runner.find_optimal_parameters()
-    runner.train_overfit_underfit()
-    runner.plot_roc()
+    runner = Assignment_6()
+    runner.plot_support_vectors()
+
 
     import winsound
 
