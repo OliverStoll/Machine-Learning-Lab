@@ -345,6 +345,7 @@ class Assignment_4():
         for b_ in b:
             model.b = b_
             y_pred = model.predict(self.X_test)
+            y_pred = np.sign(y_pred)
             # compute the number of true positives and false positives
             tp = np.sum((y_pred == 1) & (self.y_test == 1))
             fp = np.sum((y_pred == 1) & (self.y_test == -1))
@@ -614,12 +615,15 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 
 if __name__ == '__main__':
-    #runner = Assignment_6()
-    # runner.svm_cross_validation()
-    # runner.nn_cross_validation(nsteps=100, n_params=1)
-    #runner.plot_nn_weight_vectors()
-    runner = Assignment_5()
-    runner.lin_test(model = svm_qp)
-    #runner = Assignment_4()
-    #runner.train_overfit_underfit()
+    if False:
+        runner = Assignment_6()
+        runner.svm_cross_validation()
+    runner = Assignment_4()
+    runner.find_optimal_parameters()
+    runner.train_overfit_underfit()
+    runner.plot_roc()
+
+    import winsound
+
+    winsound.Beep(500, 200)
 
