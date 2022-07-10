@@ -66,36 +66,31 @@ class svm_qp():
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
         indexes_sv = np.where(alpha > 1e-5)[0]
+
         self.indexes_sv = indexes_sv
         self.alpha_sv = alpha[indexes_sv]
         self.X_sv = X[indexes_sv]
         self.Y_sv = Y[indexes_sv]
         self.K_sv = buildKernel(self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         '''calculate bias'''
+        '''
         vector_sv = self.alpha_sv * self.Y_sv
         func_vals = self.K_sv.T @ vector_sv
         biases = func_vals - self.Y_sv
         self.b = np.mean(biases)
-        '''test biases on margin points'''
+        test biases on margin points
         indexes_bias = np.where(self.alpha_sv < self.C - 1e-5)[0]
         alpha_bias = self.alpha_sv[indexes_bias]
-
         X_bias = X[indexes_bias]
         Y_bias = Y[indexes_bias]
         results_bias = self.predict(X_bias)
         print('biastest=', Y_bias * results_bias)
         '''
-        K_bias = buildKernel(self.X_sv.T, X_bias.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+        K_bias = buildKernel(X.T, self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vector_sv = self.alpha_sv * self.Y_sv
-        func_vals = K_bias.T @ vector_sv
-        biases = func_vals - Y_bias
-        if len(indexes_bias) > 0:
-            self.b = np.mean(biases)
-        else:
-            self.b = 0
-            '''
-        '''test y_i f(x_i) = 1'''
-        #print(np.dot(self.alpha_sv,self.Y_sv))
+        func_vals = K_bias @ vector_sv
+        biases = func_vals - Y
+        self.b = np.mean(biases)
     def predict(self, X):
         K = buildKernel(self.X_sv.T, X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
@@ -364,7 +359,7 @@ class Assignment_5():
             self.Y_mod = np.zeros(n)
             self.Y_mod[self.Y != clas] = -1
             self.Y_mod[self.Y == clas] = 1
-            plt.figure(figsize=(20,20))
+            plt.figure(figsize=(15,15))
             for index,kernel in enumerate(['linear','polynomial', 'gaussian']):
                 for kernelparameter in np.linspace(1,5,5):
                     kernelparameter = int(kernelparameter)
@@ -382,7 +377,7 @@ class Assignment_5():
                     plt.ylabel('loss')
                     plt.ylim(0,1)
                     plt.title(f'{str(kernel)} , {kernelparameter}')
-                    plt.suptitle(f'')
+                    plt.suptitle(f'Classification Results for Class {clas}')
             plt.show()
 
 
@@ -597,7 +592,9 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 
 if __name__ == '__main__':
-    runner = Assignment_6()
+    #runner = Assignment_6()
     # runner.svm_cross_validation()
     # runner.nn_cross_validation(nsteps=100, n_params=1)
-    runner.plot_nn_weight_vectors()
+    #runner.plot_nn_weight_vectors()
+    runner = Assignment_5()
+    runner.lin_test(model = svm_qp)
