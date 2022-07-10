@@ -26,6 +26,7 @@ import time
 from torch.nn import Module, Parameter, ParameterList
 from torch.optim import SGD
 import scipy.io as sio
+from copy import deepcopy
 
 
 class svm_qp():
@@ -41,7 +42,7 @@ class svm_qp():
         self.Y_sv = None
 
     def fit(self, X, Y):
-        n,d = X.shape
+        n, d = X.shape
 
         K = buildKernel(X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
 
@@ -76,7 +77,7 @@ class svm_qp():
         K_bias = buildKernel(self.X_sv.T, X_bias.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vector_sv = self.alpha_sv * self.Y_sv
         func_vals = K_bias.T @ vector_sv
-        biases = func_vals - 1/Y_bias
+        biases = func_vals - 1 / Y_bias
         if len(indexes_bias) > 0:
             self.b = np.mean(biases)
         else:
@@ -84,12 +85,14 @@ class svm_qp():
         '''test y_i f(x_i) = 1'''
         results_bias = self.predict(X_bias)
         # print('biastest=',Y_bias * results_bias)
-        #print(np.dot(self.alpha_sv,self.Y_sv))
+        # print(np.dot(self.alpha_sv,self.Y_sv))
+
     def predict(self, X):
-        K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+        K = buildKernel(self.X_sv.T, X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
         prebias = K.T @ vec
         return prebias - self.b
+
 
 # This is already implemented for your convenience
 class svm_sklearn():
@@ -113,17 +116,14 @@ class svm_sklearn():
         return self.clf.decision_function(X)
 
 
-def plot_boundary_2d(X, y, model,title = 'whatever'):
-
-    fig,ax = plt.subplots()
+def plot_boundary_2d(X, y, model, title='whatever'):
+    fig, ax = plt.subplots()
     pos_inds = np.where(np.sign(y) == 1)[0]
     neg_inds = np.where(np.sign(y) == -1)[0]
     X_c1 = X[pos_inds]
     X_c2 = X[neg_inds]
-    ax.scatter(x = X_c1[:,0],y = X_c1[:,1], label = 'class1', c = 'b')
-    ax.scatter(x = X_c2[:,0],y = X_c2[:,1], label = 'class2',c = 'r')
-
-
+    ax.scatter(x=X_c1[:, 0], y=X_c1[:, 1], label='class1', c='b')
+    ax.scatter(x=X_c2[:, 0], y=X_c2[:, 1], label='class2', c='r')
 
     '''draw contour line'''
 
@@ -138,8 +138,8 @@ def plot_boundary_2d(X, y, model,title = 'whatever'):
     x, y = np.meshgrid(xvals, yvals)
     points = np.array([x.flatten(), y.flatten()]).T
     predictions = model.predict(points)
-    n = grid_density**2
-    if len(predictions.shape) ==2:
+    n = grid_density ** 2
+    if len(predictions.shape) == 2:
         targets = np.zeros(n)
         for i in range(n):
             if predictions[i][0] > predictions[i][1]:
@@ -149,11 +149,11 @@ def plot_boundary_2d(X, y, model,title = 'whatever'):
     else:
         targets = np.sign(predictions)
 
-    ax.contourf(x,y, targets.reshape(x.shape), levels = 0, alpha = .3)
-    ax.set_xlim([xmin ,xmax])
-    ax.set_ylim([ymin,ymax])
+    ax.contourf(x, y, targets.reshape(x.shape), levels=0, alpha=.3)
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     plt.title(f'{title}')
-    ax.legend(loc = 'upper left')
+    ax.legend(loc='upper left')
     plt.show()
 
 
@@ -186,7 +186,7 @@ def buildKernel(X, Y=False, kernel='linear', kernelparameter=0):
 
 
 class neural_network(Module):
-    def __init__(self, layers=[2, 100, 2], scale=.1, p=None, lr=None, lam=None):
+    def __init__(self, layers=[2, 100, 2], scale=.1, p=.1, lr=.1, lam=.1):
         super().__init__()
         self.weights = ParameterList([Parameter(scale * torch.randn(m, n)) for m, n in zip(layers[:-1], layers[1:])])
         self.biases = ParameterList([Parameter(scale * torch.randn(n)) for n in layers[1:]])
@@ -235,7 +235,7 @@ class neural_network(Module):
                 sum += ytrue[i, c] * torch.log(ypred[i, c])
         return -sum / ypred.shape[0]
 
-    def fit(self, X, y, nsteps=100, bs=100, plot=False):
+    def fit(self, X, y, nsteps=1000, bs=100, plot=False):
         X, y = torch.tensor(X), torch.tensor(y)
         optimizer = SGD(self.parameters(), lr=self.lr, weight_decay=self.lam)
 
@@ -297,7 +297,7 @@ class Assignment_4():
         underfit_model = svm_qp(kernel='gaussian', kernelparameter=0.1, C=0.001)
         for model in [overfit_model, underfit_model]:
             model.fit(self.X_train, self.y_train)
-            plot_boundary_2d(self.X_test, self.y_test, model, title = f'{model}')
+            plot_boundary_2d(self.X_test, self.y_test, model, title=f'{model}')
 
     def plot_roc(self):
         """ Plot ROC curve for varying bias parameter b of SVM """
@@ -327,15 +327,16 @@ class Assignment_4():
 
 
 class Assignment_5():
-    def __init__(self, model = svm_qp):
+    def __init__(self, model=svm_qp):
         self.data_dict = dict(np.load('data/iris.npz'))
         self.X = data['X'].T
         self.Y = data['Y'].T
         self.model = model()
+
     def lin_test(self):
-        n,d = self.X.shape
+        n, d = self.X.shape
         '''for each class check for loinear separability from other two classes'''
-        for clas in range(1,4):
+        for clas in range(1, 4):
             self.Y_mod = self.Y
             for i in range(n):
                 pass
@@ -349,18 +350,23 @@ class Assignment_6():
         # reshape every vector in self.X to 16x16 img
         self.X_2d = self.X.reshape(self.X.shape[0], 16, 16)
         self.Y = data['data_labels'].T
+        self.Y_zero_one = deepcopy(self.Y)
+        self.Y_zero_one[self.Y == -1] = 0
         # convert labels from one-hot to single int
         self.Y_int = np.argmax(self.Y, axis=1)
+        self.p = 0.1
+        self.lr = 0.02
+        self.lam = 0.01
 
-    def plot_25_images(self, labels):
+
+    def plot_25_images(self, labels, labels_true=None):
         plt.figure(figsize=(10, 10))
         for i in range(25):
             plt.subplot(5, 5, i + 1)
             plt.imshow(self.X_2d[i], cmap='gray')
-            plt.title(labels[i])
+            plt.title(labels[i], color='red' if labels_true is not None and labels_true[i] == labels[i] else 'black')
             plt.axis('off')
         plt.show()
-
 
     def svm_cross_validation(self):
 
@@ -378,32 +384,41 @@ class Assignment_6():
             # cross validation
             params = {'kernel': ['linear', 'polynomial', 'gaussian'],
                       'kernelparameter': np.linspace(1, 3, 3)}
-            optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1, nfolds=5)
+            optimal_model = cv(X=self.X, y=y, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1,
+                               nfolds=5)
             predictions = optimal_model.predict(self.X)
             predictions = np.sign(predictions)
-            self.plot_25_images(predictions)
+            self.plot_25_images(predictions, labels_true=self.Y_int)
 
             # write and print logs
-            print("Optimal parameters found [kernel, kernel_param]", optimal_model.kernel, optimal_model.kernelparameter,)
+            print("Optimal parameters found [kernel, kernel_param]", optimal_model.kernel,
+                  optimal_model.kernelparameter, )
             print("Test Error:", optimal_model.cvloss)
             with open('svm_cross_validation.txt', 'a') as f:
                 f.write(f"{label} {optimal_model.kernel} {optimal_model.kernelparameter} {optimal_model.cvloss}\n")
 
-    def nn_cross_validation(self):
+    def nn_cross_validation(self, nsteps=1000, n_params=4):
 
         # create log file
         with open('nn_cross_validation.txt', 'w'):
             pass
 
-        params = {'layers': [[256, 10]],
-                  'p': np.linspace(0.1, 0.5, 3),
-                  'lam': np.logspace(-3, -1, 3),
-                  'lr': np.logspace(-3, -1, 3)}
-        optimal_model = cv(X=self.X, y=self.Y, method=neural_network, loss_function=zero_one_loss, params=params, nrepetitions=1, nfolds=5)
-        print("Optimal parameters found [layers, p, lam, lr]", len(optimal_model.weights), optimal_model.p, optimal_model.lam, optimal_model.lr)
+        params = {'layers': [[256, 100, 10]],
+                  'p': np.linspace(0.1, 0.3, n_params),
+                  'lam': np.logspace(-3, -0.5, n_params),
+                  'lr': np.logspace(-3, -0.5, n_params)}
+
+        optimal_model = cv(X=self.X, y=self.Y_zero_one, method=neural_network, loss_function=nn_zero_one_loss,
+                           params=params, nrepetitions=1, nfolds=5, nsteps=nsteps)
+
+        print("Optimal parameters found [layers, p, lam, lr]", len(optimal_model.weights), optimal_model.p,
+              optimal_model.lam, optimal_model.lr)
         print("Test Error:", optimal_model.cvloss)
+        self.optimal_model = optimal_model
         with open('nn_cross_validation.txt', 'a') as f:
-            f.write(f"{optimal_model.weights} {optimal_model.p} {optimal_model.lam} {optimal_model.lr} {optimal_model.cvloss}\n")
+            f.write(
+                f"{optimal_model.weights} {optimal_model.p} {optimal_model.lam} {optimal_model.lr} {optimal_model.cvloss}\n")
+
 
     def plot_support_vectors(self):
         """ For every class (digit), plot the support vectors of nn and svm """
@@ -411,6 +426,35 @@ class Assignment_6():
 
     def plot_nn_weight_vectors(self):
         """ Plot 100 weight vectors of the first layer of the neural net (grayscale) """
+
+        for nsteps in [5, 50, 250]:
+            model = neural_network(layers=[256, 100, 10], p=self.p, lr=self.lr, lam=self.lam)
+            model.fit(X=self.X, y=self.Y_zero_one, nsteps=nsteps, plot=True)
+            weights = model.weights[0].detach().numpy()
+            weights = weights.reshape(-1, 10, 10)
+            plt.figure(figsize=(10, 10))
+            dim = 10
+            for i in range(dim * dim):
+                plt.subplot(dim, dim, i + 1)
+                # imshow from -1 to 1
+                plt.imshow(weights[i], cmap='gray', vmin=-1, vmax=1)
+                plt.axis('off')
+            plt.suptitle(f"First Layer weights fitted with nsteps={nsteps}")
+            plt.show()
+
+        for lam in [0.01, 0.1, 1]:
+            model = neural_network(layers=[256, 100, 10], p=self.p, lr=self.lr, lam=lam)
+            model.fit(X=self.X, y=self.Y_zero_one, nsteps=250)
+            weights = model.weights[0].detach().numpy()
+            weights = weights.reshape(-1, 10, 10)
+            plt.figure(figsize=(10, 10))
+            dim = 10
+            for i in range(dim*dim):
+                plt.subplot(dim, dim, i + 1)
+                plt.imshow(weights[i], cmap='gray', vmin=-1, vmax=1)
+                plt.axis('off')
+            plt.suptitle(f"First Layer weights fitted with lam={lam}")
+            plt.show()
 
 
 def zero_one_loss(y_true, y_pred):
@@ -420,7 +464,29 @@ def zero_one_loss(y_true, y_pred):
     return output / total
 
 
-def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None):
+def nn_zero_one_loss(y_true, y_pred):
+    ''' Loss function that calculates percentage of correctly predicted signs'''
+
+    # get the index of the largest value in y_pred
+    y_pred_index = np.argmax(y_pred, axis=1)
+    # get the index of the largest value in y_true
+    y_true_index = np.argmax(y_true, axis=1)
+    output = np.sum(y_true_index != y_pred_index)
+    total = len(y_true)
+    return output / total
+
+
+def nn_loss(y_pred, y_true):
+    # implement cross entropy loss
+    assert y_pred.shape == y_true.shape
+    sum = 0
+    for i in range(y_pred.shape[0]):
+        for c in range(y_pred.shape[1]):
+            sum += y_true[i, c] * np.log(y_pred[i, c])
+    return -sum / y_pred.shape[0]
+
+
+def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None, nsteps=1000):
     from sklearn.model_selection import KFold
     import itertools as it
     """ Creates a class 'method' for cross validation """
@@ -455,7 +521,7 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
                 # train the model using the training data and get predictions about the test data
                 model = method(**param_combination)
-                model.fit(X_train, y_train)
+                model.fit(X_train, y_train, nsteps=nsteps)
                 if bias is None:
                     y_pred = model.predict(X_test)
                 else:
@@ -488,6 +554,6 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 if __name__ == '__main__':
     runner = Assignment_6()
-    neural_network = neural_network()
     # runner.svm_cross_validation()
-    runner.nn_cross_validation()
+    # runner.nn_cross_validation(nsteps=100, n_params=1)
+    runner.plot_nn_weight_vectors()
