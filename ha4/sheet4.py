@@ -72,25 +72,38 @@ class svm_qp():
         self.X_sv = X[indexes_sv]
         self.Y_sv = Y[indexes_sv]
         self.K_sv = buildKernel(self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
-        '''calculate bias'''
-        '''
-        vector_sv = self.alpha_sv * self.Y_sv
-        func_vals = self.K_sv.T @ vector_sv
-        biases = func_vals - self.Y_sv
-        self.b = np.mean(biases)
-        test biases on margin points
+
         indexes_bias = np.where(self.alpha_sv < self.C - 1e-5)[0]
         alpha_bias = self.alpha_sv[indexes_bias]
-        X_bias = X[indexes_bias]
-        Y_bias = Y[indexes_bias]
+        X_bias = self.X_sv[indexes_bias]
+        Y_bias = self.Y_sv[indexes_bias]
+        if len(list(indexes_bias)) > 0:
+            '''calculate bias from vectors on margin'''
+
+            K_bias = buildKernel(X_bias.T, self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
+            vector_sv = self.alpha_sv * self.Y_sv
+            func_vals = K_bias @ vector_sv
+            biases = func_vals - Y_bias
+            self.b = np.mean(biases)
+        elif len(list(indexes_sv)) > 0:
+            '''calculate bias from support vectors'''
+            print('no vectors on margin, using support vectors')
+            vector_sv = self.alpha_sv * self.Y_sv
+            func_vals = self.K_sv @ vector_sv
+            biases = func_vals - self.Y_sv
+            self.b = np.mean(biases)
+        else:
+            print('no support vectors')
+            self.b = 0
+
+
+
+
+        '''test biases on margin points if possible'''
+
         results_bias = self.predict(X_bias)
         print('biastest=', Y_bias * results_bias)
-        '''
-        K_bias = buildKernel(X.T, self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
-        vector_sv = self.alpha_sv * self.Y_sv
-        func_vals = K_bias @ vector_sv
-        biases = func_vals - Y
-        self.b = np.mean(biases)
+
     def predict(self, X):
         K = buildKernel(self.X_sv.T, X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vec = self.alpha_sv * self.Y_sv
@@ -373,11 +386,13 @@ class Assignment_5():
                         loss = zero_one_loss(self.Y_mod, predictions)
                         losses.append(loss)
                     plt.plot(np.linspace(1, 10, 10), losses, c='r')
+                    # draw dotted line on 0 loss
+                    plt.plot(np.linspace(1, 10, 10), np.zeros(10), c='k', linestyle='--', alpha = .5)
                     plt.xlabel('C')
                     plt.ylabel('loss')
-                    plt.ylim(0, 1)
+                    plt.ylim(-.2, 1)
                     plt.title(f'{str(kernel)} , {kernelparameter}')
-                    plt.suptitle(f'Classification Results for Class {clas}')
+            plt.suptitle(f'Classification Results for Class {clas}',fontsize=30)
             plt.show()
 
 
@@ -605,3 +620,6 @@ if __name__ == '__main__':
     #runner.plot_nn_weight_vectors()
     runner = Assignment_5()
     runner.lin_test(model = svm_qp)
+    #runner = Assignment_4()
+    #runner.train_overfit_underfit()
+
