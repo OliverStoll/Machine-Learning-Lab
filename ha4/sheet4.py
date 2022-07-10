@@ -116,10 +116,20 @@ class svm_sklearn():
         return self.clf.decision_function(X)
 
 
-def plot_boundary_2d(X, y, model, title=''):
-    fig, ax = plt.subplots()
-    pos_inds = np.where(np.sign(y) == 1)[0]
-    neg_inds = np.where(np.sign(y) == -1)[0]
+def plot_boundary_2d(X, Y, model,title = 'whatever'):
+
+    fig,ax = plt.subplots()
+    if hasattr(model, 'X_sv'):
+        x_sv = model.X_sv[:, 0]
+        y_sv = model.X_sv[:, 1]
+        ax.scatter(x = x_sv, y = y_sv, c='r', marker='x',alpha=1, label = 'support vectors')
+    pos_inds = np.where(np.sign(Y) == 1)[0]
+    '''neural net special case'''
+    if 0 in Y:
+        neg_inds = np.where(Y == 0)[0]
+    else:
+        neg_inds = np.where(np.sign(Y) == -1)[0]
+
     X_c1 = X[pos_inds]
     X_c2 = X[neg_inds]
     ax.scatter(x=X_c1[:, 0], y=X_c1[:, 1], label='class1', c='b')
@@ -152,7 +162,6 @@ def plot_boundary_2d(X, y, model, title=''):
     ax.contourf(x, y, targets.reshape(x.shape), levels=0, alpha=.3)
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
-    ax.axis('off')
     plt.title(f'{title}')
     ax.legend(loc='upper left')
     plt.show()
@@ -285,47 +294,41 @@ class Assignment_4():
     def find_optimal_parameters(self):
         # find optimal parameters for gaussian kernel
         params = {'kernel': ['gaussian'],
-                  'kernelparameter': np.linspace(0.1, 3, 30),
-                  'C': np.linspace(0.1, 10, 20)}
-        optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, loss_function=zero_one_loss, params=params, nrepetitions=1)
-        print("Optimal parameters found [kernel, c]", optimal_model.kernelparameter, optimal_model.C, optimal_model.cvloss)
+                  'kernelparameter': np.linspace(0.1, 3, 5),
+                  'C': np.linspace(0.1, 3, 5)}
+        optimal_model = cv(X=self.X_train, y=self.y_train, method=svm_qp, params=params, nrepetitions=1)
+        print("Optimal parameters found [kernel, c]", optimal_model.kernelparameter, optimal_model.C)
         plot_boundary_2d(self.X_test, self.y_test, optimal_model)
         print("DONE")
         self.optimal_model = optimal_model
 
     def train_overfit_underfit(self):
-        models = {
-            'underfit_model': svm_qp(kernel='gaussian', kernelparameter=100, C=1),
-            'overfit_model': svm_qp(kernel='gaussian', kernelparameter=0.1, C=0.1)
-        }
-        for name, model in models.items():
+        overfit_model = svm_qp(kernel='gaussian', kernelparameter=100, C=1)
+        underfit_model = svm_qp(kernel='gaussian', kernelparameter=0.1, C=0.001)
+        for model in [overfit_model, underfit_model]:
             model.fit(self.X_train, self.y_train)
-            plot_boundary_2d(self.X_test, self.y_test, model, title=name)
+            plot_boundary_2d(self.X_test, self.y_test, model, title=f'{model}')
 
     def plot_roc(self):
         """ Plot ROC curve for varying bias parameter b of SVM """
 
         if self.optimal_model is None:
-            model = svm_qp(kernel='gaussian', kernelparameter=1, C=4.3)
-            model.fit(self.X_train, self.y_train)
-        b = np.linspace(-10, 10, 10000)
+            self.optimal_model = svm_qp(kernel='gaussian', kernelparameter=1, C=1.5)
+            self.optimal_model.fit(self.X_train, self.y_train)
+        b = np.linspace(-2, 2, 10000)
         fpr, tpr = [], []
+        model = self.optimal_model
         total_p = np.sum(self.y_test == 1)
         total_n = np.sum(self.y_test == -1)
         for b_ in b:
             model.b = b_
             y_pred = model.predict(self.X_test)
             # compute the number of true positives and false positives
-            y_pred = np.sign(y_pred)
-            y_test = np.sign(self.y_test)
             tp = np.sum((y_pred == 1) & (self.y_test == 1))
             fp = np.sum((y_pred == 1) & (self.y_test == -1))
             tpr += [tp / total_p]
             fpr += [fp / total_n]
 
-        # convert fpr and tpr to numpy
-        tpr = np.array(tpr)
-        fpr = np.array(fpr)
         plt.plot(fpr, tpr)
         plt.xlabel('False positive rate')
         plt.ylabel('True positive rate')
@@ -404,7 +407,7 @@ class Assignment_6():
             with open('svm_cross_validation.txt', 'a') as f:
                 f.write(f"{label} {optimal_model.kernel} {optimal_model.kernelparameter} {optimal_model.cvloss}\n")
 
-    def nn_cross_validation(self, nsteps=300, n_params=4):
+    def nn_cross_validation(self, nsteps=1000, n_params=4):
 
         # create log file
         with open('nn_cross_validation.txt', 'w'):
@@ -493,7 +496,7 @@ def nn_loss(y_pred, y_true):
     return -sum / y_pred.shape[0]
 
 
-def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None, nsteps=None):
+def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None, nsteps=1000):
     from sklearn.model_selection import KFold
     import itertools as it
     """ Creates a class 'method' for cross validation """
@@ -528,10 +531,7 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
                 # train the model using the training data and get predictions about the test data
                 model = method(**param_combination)
-                if nsteps is not None:
-                    model.fit(X_train, y_train, nsteps=nsteps)
-                else:
-                    model.fit(X_train, y_train)
+                model.fit(X_train, y_train, nsteps=nsteps)
                 if bias is None:
                     y_pred = model.predict(X_test)
                 else:
@@ -563,14 +563,7 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 
 if __name__ == '__main__':
-    runner = Assignment_4()
-    # runner.find_optimal_parameters()
-    # runner.train_overfit_underfit()
-    runner.plot_roc()
-
-
-
-    # runner = Assignment_6()
+    runner = Assignment_6()
     # runner.svm_cross_validation()
     # runner.nn_cross_validation(nsteps=100, n_params=1)
-    # runner.plot_nn_weight_vectors()
+    runner.plot_nn_weight_vectors()
