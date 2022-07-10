@@ -101,8 +101,8 @@ class svm_qp():
 
         '''test biases on margin points if possible'''
 
-        results_bias = self.predict(X_bias)
-        print('biastest=', Y_bias * results_bias)
+        #results_bias = self.predict(X_bias)
+        #print('biastest=', Y_bias * results_bias)
 
     def predict(self, X):
         K = buildKernel(self.X_sv.T, X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
