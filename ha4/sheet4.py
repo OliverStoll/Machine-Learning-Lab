@@ -64,25 +64,35 @@ class svm_qp():
                             cvxmatrix(A, tc='d'),
                             cvxmatrix(b, tc='d'))['x']).flatten()
         indexes_sv = np.where(alpha > 1e-5)[0]
+        self.indexes_sv = indexes_sv
         self.alpha_sv = alpha[indexes_sv]
         self.X_sv = X[indexes_sv]
         self.Y_sv = Y[indexes_sv]
+        self.K_sv = buildKernel(self.X_sv.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         '''calculate bias'''
+        vector_sv = self.alpha_sv * self.Y_sv
+        func_vals = self.K_sv.T @ vector_sv
+        biases = func_vals - self.Y_sv
+        self.b = np.mean(biases)
+        '''test biases on margin points'''
         indexes_bias = np.where(self.alpha_sv < self.C - 1e-5)[0]
         alpha_bias = self.alpha_sv[indexes_bias]
+
         X_bias = X[indexes_bias]
         Y_bias = Y[indexes_bias]
+        results_bias = self.predict(X_bias)
+        print('biastest=', Y_bias * results_bias)
+        '''
         K_bias = buildKernel(self.X_sv.T, X_bias.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
         vector_sv = self.alpha_sv * self.Y_sv
         func_vals = K_bias.T @ vector_sv
-        biases = func_vals - 1/Y_bias
+        biases = func_vals - Y_bias
         if len(indexes_bias) > 0:
             self.b = np.mean(biases)
         else:
             self.b = 0
+            '''
         '''test y_i f(x_i) = 1'''
-        results_bias = self.predict(X_bias)
-        print('biastest=',Y_bias * results_bias)
         #print(np.dot(self.alpha_sv,self.Y_sv))
     def predict(self, X):
         K = buildKernel(self.X_sv.T,X.T, kernel=self.kernel, kernelparameter=self.kernelparameter)
@@ -112,15 +122,30 @@ class svm_sklearn():
         return self.clf.decision_function(X)
 
 
-def plot_boundary_2d(X, y, model,title = 'whatever'):
+def plot_boundary_2d(X, Y, model,title = 'whatever'):
 
     fig,ax = plt.subplots()
-    pos_inds = np.where(np.sign(y) == 1)[0]
-    neg_inds = np.where(np.sign(y) == -1)[0]
+    if hasattr(model, 'X_sv'):
+        x_sv = model.X_sv[:, 0]
+        y_sv = model.X_sv[:, 1]
+        ax.scatter(x = x_sv, y = y_sv, c='r', marker='x',alpha=1, label = 'support vectors')
+    pos_inds = np.where(np.sign(Y) == 1)[0]
+    '''neural net special case'''
+    if 0 in Y:
+        neg_inds = np.where(Y == 0)[0]
+    else:
+        neg_inds = np.where(np.sign(Y) == -1)[0]
+
     X_c1 = X[pos_inds]
     X_c2 = X[neg_inds]
-    ax.scatter(x = X_c1[:,0],y = X_c1[:,1], label = 'class1', c = 'b')
-    ax.scatter(x = X_c2[:,0],y = X_c2[:,1], label = 'class2',c = 'r')
+
+    # remove all support vectors from X_c1 and X_c2
+    if hasattr(model, 'X_sv'):
+        X_c1 = X_c1[np.where(np.isin(X_c1, model.X_sv, invert=True))[0]]
+        X_c2 = X_c2[np.where(np.isin(X_c2, model.X_sv, invert=True))[0]]
+
+    ax.scatter(x = X_c1[:,0],y = X_c1[:,1], label = 'class1', c = 'b', marker = 'o',alpha = 1)
+    ax.scatter(x = X_c2[:,0],y = X_c2[:,1], label = 'class2',c = 'g', marker = 'o',alpha = 1)
 
 
 
@@ -140,6 +165,7 @@ def plot_boundary_2d(X, y, model,title = 'whatever'):
     n = grid_density**2
     if len(predictions.shape) ==2:
         targets = np.zeros(n)
+        maxima = np.max(predictions,axis=1)
         for i in range(n):
             if predictions[i][0] > predictions[i][1]:
                 targets[i] = 1
@@ -326,28 +352,28 @@ class Assignment_4():
 class assignment_5():
     def __init__(self, model = svm_qp):
         self.data_dict = dict(np.load('data/iris.npz'))
-        self.X = data['X'].T
-        self.Y = data['Y'].T
-        self.model = model()
+        self.X = self.data_dict['X'].T
+        self.Y = self.data_dict['Y'].T
+        self.model = model(kernel='polynomial', kernelparameter=3, C=5)
+        self.loss = []
     def lin_test(self):
         n,d = self.X.shape
         '''for each class check for loinear separability from other two classes'''
         for clas in range(1,4):
-            self.Y_mod = self.Y
-            for i in range(n):
-                pass
+            self.Y_mod = np.zeros(n)
+            self.Y_mod[self.Y != clas] = -1
+            self.Y_mod[self.Y == clas] = 1
+            self.model.fit(self.X, self.Y_mod)
+            predictions = self.model.predict(self.X)
+            self.loss.append(np.average(np.sign(predictions) != self.Y_mod))
+        print(self.loss)
 
-def Assignment_5():
-    X = data['X'].T
-    Y = data['Y'].T
-    model = svm_qp()
-    model.fit(X,Y)
-    plot_boundary_2d(X,Y,model)
-    pass
 
 
 if __name__ == '__main__':
     runner = Assignment_4()
     # runner.find_optimal_parameters()
     # runner.train_overfit_underfit()
-    runner.plot_roc()
+    #runner.plot_roc()
+    runner = assignment_5(svm_qp)
+    runner.lin_test()
