@@ -125,7 +125,7 @@ class svm_sklearn():
         return self.clf.decision_function(X)
 
 
-def plot_boundary_2d(X, Y, model,title = 'whatever'):
+def plot_boundary_2d(X, Y, model,title = 'No Title Given'):
 
     fig,ax = plt.subplots()
     if hasattr(model, 'X_sv'):
@@ -176,8 +176,9 @@ def plot_boundary_2d(X, Y, model,title = 'whatever'):
                 targets[i] = -1
     else:
         targets = np.sign(predictions)
+    #change contour line coloration
 
-    ax.contourf(x, y, targets.reshape(x.shape), levels=0, alpha=.3)
+    ax.contourf(x, y, targets.reshape(x.shape), levels=0, alpha=.3,c = ['b','g'])
     ax.set_xlim([xmin, xmax])
     ax.set_ylim([ymin, ymax])
     plt.title(f'{title}')
@@ -356,19 +357,34 @@ class Assignment_5():
         self.data_dict = dict(np.load('data/iris.npz'))
         self.X = self.data_dict['X'].T
         self.Y = self.data_dict['Y'].T
-        self.model = model(kernel='polynomial', kernelparameter=3, C=5)
         self.loss = []
-    def lin_test(self):
+    def lin_test(self,model = svm_qp):
         n,d = self.X.shape
         '''for each class check for loinear separability from other two classes'''
         for clas in range(1,4):
             self.Y_mod = np.zeros(n)
             self.Y_mod[self.Y != clas] = -1
             self.Y_mod[self.Y == clas] = 1
-            self.model.fit(self.X, self.Y_mod)
-            predictions = self.model.predict(self.X)
-            self.loss.append(np.average(np.sign(predictions) != self.Y_mod))
-        print(self.loss)
+            plt.figure(figsize=(20,20))
+            for index,kernel in enumerate(['linear','polynomial', 'gaussian']):
+                for kernelparameter in np.linspace(1,5,5):
+                    kernelparameter = int(kernelparameter)
+                    losses = []
+                    subplot_num = int((index * 5) + kernelparameter)
+                    plt.subplot(3,5,subplot_num)
+                    for C in np.linspace(1,10,10):
+                        self.model = model(kernel=kernel, kernelparameter=kernelparameter, C=C)
+                        self.model.fit(self.X, self.Y_mod)
+                        predictions = self.model.predict(self.X)
+                        loss = zero_one_loss(self.Y_mod, predictions)
+                        losses.append(loss)
+                    plt.plot(np.linspace(1,10,10), losses,c = 'r')
+                    plt.xlabel('C')
+                    plt.ylabel('loss')
+                    plt.ylim(0,1)
+                    plt.title(f'{str(kernel)} , {kernelparameter}')
+                    plt.suptitle(f'')
+            plt.show()
 
 
 class Assignment_6():
@@ -582,7 +598,9 @@ def cv(X, y, method, params, loss_function, nfolds=10, nrepetitions=5, bias=None
 
 
 if __name__ == '__main__':
-    runner = Assignment_6()
+    #runner = Assignment_6()
     # runner.svm_cross_validation()
     # runner.nn_cross_validation(nsteps=100, n_params=1)
-    runner.plot_nn_weight_vectors()
+    #runner.plot_nn_weight_vectors()
+    runner = Assignment_5()
+    runner.lin_test()
