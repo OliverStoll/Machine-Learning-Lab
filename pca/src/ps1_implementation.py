@@ -9,7 +9,7 @@ Write the functions
 - pca
 - gammaidx
 - lle
-Write your implementations in the given functions stubs!
+Write your implementations in the given functions src!
 
 
 (c) Daniel Bartz, TU Berlin, 2013

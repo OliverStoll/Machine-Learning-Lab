@@ -9,7 +9,7 @@ Write the functions
 - krr_app
 (- roc_fun)
 
-Write your code in the given functions stubs!
+Write your code in the given functions src!
 
 
 (c) Daniel Bartz, TU Berlin, 2013

@@ -8,7 +8,7 @@ Complete the classes and functions
 - svm_qp
 - plot_svm_2d
 - neural_network
-Write your implementations in the given functions stubs!
+Write your implementations in the given functions src!
 
 
 (c) Felix Brockherde, TU Berlin, 2013
